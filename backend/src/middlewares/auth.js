@@ -1,0 +1,36 @@
+const jwt = require("jsonwebtoken");
+
+module.exports = (req, res, next) => {
+  let token;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    token = authHeader.split(" ")[1];
+  } else if (req.query.token) {
+    // Fallback for file downloads (CSV, PDF)
+    token = req.query.token;
+  }
+
+  if (!token) {
+    return res.status(401).json({ error: "Token missing" });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret_dev_key"
+    );
+    req.user = decoded;
+
+    // Safety check: ensure token matches current tenant if tenant is resolved
+    if (req.orgId && req.user.orgId !== req.orgId) {
+      return res.status(403).json({
+        error: "Access denied: User does not belong to this organization.",
+      });
+    }
+
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+};

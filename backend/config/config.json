@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "@Tigrid7561",
+    "database": "slotcore_db",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "@Tigrid7561",
+    "database": "slotcore_db",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "postgres",
+    "password": "@Tigrid7561",
+    "database": "slotcore_db",
+    "host": "localhost",
+    "dialect": "postgres"
+  }
+}
