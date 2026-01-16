@@ -14,8 +14,16 @@ const HorizontalDateScroller = ({
   const [selectedItem, setSelectedItem] = useState(null);
   const scrollContainerRef = useRef(null);
 
+  // Helper to get local YYYY-MM-DD
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   // Memoize the initial date string to prevent unnecessary changes
-  const initialDateString = initialDate.toISOString().split("T")[0];
+  const initialDateString = getLocalDateString(initialDate);
 
   // Generate items based on mode - memoized to prevent recreation
   const generateItems = useCallback(() => {
@@ -80,7 +88,7 @@ const HorizontalDateScroller = ({
   const handleItemClick = (item) => {
     if (isDateClosed(item)) return; // Disable clicking closed dates
 
-    const dateString = item.toISOString().split("T")[0];
+    const dateString = getLocalDateString(item);
     setSelectedItem(dateString);
     if (onDateSelect) {
       onDateSelect(dateString);
@@ -110,7 +118,7 @@ const HorizontalDateScroller = ({
 
   const isSelected = (date) => {
     if (!selectedItem) return false;
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = getLocalDateString(date);
     return dateString === selectedItem;
   };
 
@@ -130,7 +138,7 @@ const HorizontalDateScroller = ({
         style={{ scrollSnapType: "x mandatory" }}
       >
         {items.map((date) => {
-          const dateString = date.toISOString().split("T")[0];
+          const dateString = getLocalDateString(date);
           const selected = isSelected(date);
           const current = isCurrent(date);
           const closed = isDateClosed(date);

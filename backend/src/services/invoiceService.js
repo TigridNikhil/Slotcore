@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const fs = require("fs");
 const path = require("path");
+const invoiceTemplate = require("../templates/invoiceTemplate");
 
 const getChromeExecutablePath = () => {
   const platform = process.platform;
@@ -54,27 +55,28 @@ exports.createInvoice = async (data, res) => {
   <meta charset="utf-8" />
   <style>
     body {
-      background: #f3f4f6;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      color: #374151;
+      font-family: 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;
+      color: #555;
+      max-width: 800px;
+      margin: auto;
+      padding: 30px;
+      font-size: 16px;
+      line-height: 24px;
     }
 
     .invoice-wrapper {
-      max-width: 900px;
-      margin: 40px auto;
-      background: #ffffff;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      // max-width: 900px;
+      // margin: 40px auto;
+      // // background: #ffffff;
+      // padding: 40px;
+      // border-radius: 12px;
+      // box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     }
 
     .header {
-      display: flex;
+   display: flex;
       justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #e5e7eb;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
     }
 
     .brand {
@@ -173,15 +175,11 @@ exports.createInvoice = async (data, res) => {
     <!-- Info -->
     <div class="info-grid">
       <div class="info-card">
-        <h4>Billed From</h4>
-        Slotcore Platform<br/>
-        123 Tech Park<br/>
-        Bangalore, Karnataka
-      </div>
-      <div class="info-card">
         <h4>Billed To</h4>
         ${data.orgName}<br/>
         Org ID: ${data.orgId}
+        ${data.orgAddress}<br/>
+        ${data.contactPhone}<br/>
       </div>
     </div>
 
@@ -397,5 +395,56 @@ exports.createLedgerPdf = async (data, res) => {
   } catch (error) {
     console.error("Ledger PDF Error:", error);
     res.status(500).json({ error: "Failed to generate Ledger PDF" });
+  }
+};
+
+exports.createBookingInvoice = async (booking, res) => {
+  try {
+    const htmlContent = invoiceTemplate(booking);
+
+    // Reuse launch logic
+    const launchOptions = {
+      headless: "new",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    };
+    const executablePath = getChromeExecutablePath();
+    if (executablePath) {
+      launchOptions.executablePath = executablePath;
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
+    const page = await browser.newPage();
+
+    // Set content
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+    // Generate PDF
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      margin: {
+        top: "20px",
+        bottom: "20px",
+        left: "20px",
+        right: "20px",
+      },
+    });
+
+    await browser.close();
+
+    const invoiceNo = booking.bookingId || booking.id.slice(0, 8);
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Invoice-${invoiceNo}.pdf`
+    );
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Booking Invoice Error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Failed to generate booking invoice" });
+    }
   }
 };

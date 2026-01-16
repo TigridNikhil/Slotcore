@@ -53,9 +53,9 @@ exports.updateSchedules = async (req, res) => {
           startTime: s.startTime,
           endTime: s.endTime,
           isActive: s.isActive,
-          breakStartTime: s.breakStartTime,
-          breakEndTime: s.breakEndTime,
-          isBreakActive: s.isBreakActive,
+          breakStartTime: s.breakStartTime || null,
+          breakEndTime: s.breakEndTime || null,
+          isBreakActive: s.isBreakActive || false,
         });
       }
       results.push(record);

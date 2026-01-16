@@ -13,6 +13,7 @@ const generateSlots = require("../utils/slotGenerator");
 const { Op } = require("sequelize");
 const { validationResult } = require("express-validator");
 const emailService = require("../services/emailService");
+const jwt = require("jsonwebtoken");
 
 exports.getAvailableSlots = async (req, res) => {
   const errors = validationResult(req);
@@ -122,7 +123,6 @@ exports.getAvailableSlots = async (req, res) => {
                       start: schedule.breakStartTime.slice(0, 5),
                       end: schedule.breakEndTime.slice(0, 5),
                       isBreakActive: true,
-                      // ...
                     }
                   : null,
             },
@@ -528,8 +528,18 @@ exports.createBooking = async (req, res) => {
 
     // Response
     // If payment required, return breakdown
+    const bookingToken = jwt.sign(
+      {
+        role: "public_customer",
+        bookingIds: createdBookings.map((cb) => cb.booking.id),
+      },
+      process.env.JWT_SECRET || "secret_dev_key",
+      { expiresIn: "1h" }
+    );
+
     res.status(201).json({
       success: true,
+      bookingToken, // Return token
       summary: {
         paymentRequired: isPaymentRequired,
         totalPayable: totalPayable,
@@ -847,9 +857,6 @@ exports.rescheduleBooking = async (req, res) => {
   }
 };
 
-const jwt = require("jsonwebtoken");
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
-
 exports.verifyPublicAccess = async (req, res) => {
   try {
     const { bookingId, email } = req.body;
@@ -1140,5 +1147,60 @@ exports.markCompleted = async (req, res) => {
   } catch (error) {
     console.error("Complete Error:", error);
     res.status(500).json({ error: "Failed to mark as Completed" });
+  }
+};
+
+exports.cancelPublicBookingBatch = async (req, res) => {
+  const token = req.headers["x-booking-token"];
+  if (!token) {
+    return res.status(401).json({ error: "Missing booking token" });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret_dev_key"
+    );
+
+    if (
+      decoded.role !== "public_customer" ||
+      !decoded.bookingIds ||
+      !Array.isArray(decoded.bookingIds)
+    ) {
+      return res.status(403).json({ error: "Invalid token payload" });
+    }
+
+    const { bookingIds } = decoded;
+
+    // Perform Batch Cancellation
+    const t = await sequelize.transaction();
+    try {
+      await Booking.update(
+        {
+          status: "cancelled",
+          cancellationReason: "Payment cancelled by user (Batch)",
+        },
+        {
+          where: {
+            id: bookingIds,
+            status: { [Op.ne]: "cancelled" }, // Only cancel if not already
+          },
+          transaction: t,
+        }
+      );
+
+      await t.commit();
+
+      console.log(
+        `[BatchCancel] Cancelled ${bookingIds.length} bookings via token.`
+      );
+      res.json({ success: true, message: "Bookings cancelled" });
+    } catch (err) {
+      await t.rollback();
+      throw err;
+    }
+  } catch (error) {
+    console.error("Batch Cancel Error:", error);
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
 };

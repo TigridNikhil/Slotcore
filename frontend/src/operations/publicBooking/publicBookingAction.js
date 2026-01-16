@@ -100,3 +100,23 @@ export const createPublicBooking = (bookingData) => async (dispatch) => {
     return { success: false };
   }
 };
+
+// Cancel Public Booking (on dismissal)
+export const cancelPublicBooking = (bookingIds, token) => async (dispatch) => {
+  // Accepted bookingId or bookingIds (ignored by backend if token has ids)
+  // Backend relies solely on token payload for security.
+  try {
+    await axiosInstance.post(
+      `/bookings/public/cancel`,
+      {}, // Empty body, token has info
+      {
+        headers: {
+          "x-booking-token": token,
+        },
+      }
+    );
+    console.log("Booking batch cancelled successfully after dismissal");
+  } catch (error) {
+    console.error("Failed to cancel booking:", error);
+  }
+};

@@ -111,6 +111,12 @@ router.post(
   bookingController.verifyPublicAccess
 );
 
+router.post(
+  "/public/cancel",
+  publicApiLimiter,
+  bookingController.cancelPublicBookingBatch
+);
+
 // Booking Management (Admin or Verified Public)
 router.put(
   "/:id/cancel",

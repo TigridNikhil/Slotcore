@@ -62,38 +62,42 @@ const Navbar = ({ toggleMenu, closeMenu, isMobileMenuOpen }) => {
       </div>
 
       {/* Mobile Menu */}
-      <div
-        className={`fixed inset-0 z-40 bg-white flex flex-col items-center justify-center transition-transform duration-300 md:hidden ${
-          isMobileMenuOpen
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0 pointer-events-none"
-        }`}
-      >
-        <div className="flex flex-col items-center gap-8 text-lg font-medium">
-          {NAV_LINKS.map((link) => (
-            <MobileNavItem key={link.label} {...link} onClick={closeMenu} />
-          ))}
-          <MobileNavItem to="/contact" label="Contact" onClick={closeMenu} />
-          <MobileNavItem to="/blog" label="Blog" onClick={closeMenu} />
-        </div>
+      {isMobileMenuOpen && (
+        <div
+          className="
+      fixed inset-0 z-[60] bg-white
+      flex flex-col items-center justify-center
+      md:hidden
+      animate-slideDown
+    "
+        >
+          <div className="flex flex-col items-center gap-8 text-lg font-medium">
+            {NAV_LINKS.map((link) => (
+              <MobileNavItem key={link.label} {...link} onClick={closeMenu} />
+            ))}
+            <MobileNavItem to="/contact" label="Contact" onClick={closeMenu} />
+            <MobileNavItem to="/blog" label="Blog" onClick={closeMenu} />
+          </div>
 
-        <div className="flex flex-col gap-4 mt-10 w-64">
-          <Link
-            to="/login"
-            onClick={closeMenu}
-            className="px-8 py-3 text-center rounded-lg border border-neutral-200 text-neutral-700 hover:border-primary-600 hover:text-primary-600 font-medium transition"
-          >
-            Sign In
-          </Link>
-          <Link
-            to="/register"
-            onClick={closeMenu}
-            className="px-8 py-3 text-center rounded-lg bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium shadow-lg"
-          >
-            Start Free Trial
-          </Link>
+          <div className="flex flex-col gap-4 mt-10 w-64">
+            <Link
+              to="/login"
+              onClick={closeMenu}
+              className="px-8 py-3 text-center rounded-lg border border-neutral-200 text-neutral-700 font-medium"
+            >
+              Sign In
+            </Link>
+
+            <Link
+              to="/register"
+              onClick={closeMenu}
+              className="px-8 py-3 text-center rounded-lg bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium shadow-lg"
+            >
+              Start Free Trial
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </nav>
   );
 };

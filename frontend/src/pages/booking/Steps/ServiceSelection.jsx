@@ -123,7 +123,7 @@ export default function ServiceSelection({
             </span>
             <div className="text-right">
               <span className="block font-bold text-gray-900 text-lg">
-                ${totalPrice.toFixed(2)}
+                {totalPrice.toFixed(2)}
               </span>
               <span className="text-xs">{totalDuration} mins</span>
             </div>

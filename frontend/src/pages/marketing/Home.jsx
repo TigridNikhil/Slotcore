@@ -18,7 +18,7 @@ export default function Home() {
   return (
     <>
       {/* Enhanced Hero Section */}
-      <section className="pt-24 pb-32 relative overflow-hidden">
+      <section className="">
         {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-72 bg-gradient-to-r from-primary-100/20 to-secondary-100/20 blur-3xl rounded-full" />
 

@@ -5,7 +5,8 @@ import styled from "styled-components";
 
 // Custom styled components for the toast
 const StyledToast = styled.div`
-  background: ${({ type }) => (type === "SUCCESS" ? "#27ab99" : "#e44242")};
+  background: ${({ type }) =>
+    type === "SUCCESS" ? "#27ab99" : type === "INFO" ? "#3498db" : "#e44242"};
   color: white;
   padding: 16px;
   border-radius: 8px;
@@ -55,6 +56,8 @@ export const showNotification = ({ type, message }) => {
       return customToast("SUCCESS", message);
     case "ERROR":
       return customToast("ERROR", message);
+    case "INFO":
+      return customToast("INFO", message);
     default:
       return customToast("ERROR", "Unknown type");
   }

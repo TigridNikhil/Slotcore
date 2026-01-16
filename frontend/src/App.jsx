@@ -36,7 +36,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans antialiased">
+      <div className="">
         <Routes>
           {/* Public / Landing based on Domain */}
           <Route

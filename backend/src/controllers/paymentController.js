@@ -21,51 +21,60 @@ const razorpay = new Razorpay({
 
 exports.createOrder = async (req, res) => {
   try {
-    const { bookingId } = req.body;
+    const { bookingId, bookingIds } = req.body;
 
-    if (!bookingId) {
-      return res.status(400).json({ error: "Booking ID is required" });
+    const targetIds = bookingIds || (bookingId ? [bookingId] : []);
+
+    if (targetIds.length === 0) {
+      return res.status(400).json({ error: "Booking ID(s) required" });
     }
 
-    const booking = await Booking.findByPk(bookingId);
-    if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
+    const bookings = await Booking.findAll({
+      where: { id: targetIds },
+    });
+
+    if (bookings.length === 0) {
+      return res.status(404).json({ error: "Bookings not found" });
     }
 
-    // Validate amount
-    const amount = parseFloat(booking.paymentAmount);
-    if (amount <= 0) {
-      return res
-        .status(400)
-        .json({ error: "Invalid payment amount for this booking" });
+    // Calculate total amount
+    let totalAmount = 0;
+    for (const b of bookings) {
+      totalAmount += parseFloat(b.paymentAmount || 0);
+    }
+
+    if (totalAmount <= 0) {
+      return res.status(400).json({ error: "Invalid total payment amount" });
     }
 
     const options = {
-      amount: Math.round(amount * 100), // Razorpay expects paise
+      amount: Math.round(totalAmount * 100), // Razorpay expects paise
       currency: "INR",
-      receipt: booking.bookingId || booking.id, // Use public ID if avail
+      receipt: bookings[0].bookingId || bookings[0].id, // Use first ID for receipt ref
       notes: {
-        bookingId: booking.id,
-        orgId: booking.orgId,
+        bookingIds: targetIds.join(","),
+        orgId: bookings[0].orgId,
       },
     };
 
     const order = await razorpay.orders.create(options);
 
-    // Update Booking with Order ID
-    await booking.update({ razorpayOrderId: order.id });
+    // Update ALL Bookings with Order ID
+    await Booking.update(
+      { razorpayOrderId: order.id },
+      { where: { id: targetIds } }
+    );
 
     res.json({
       success: true,
       order_id: order.id,
-      amount: amount,
+      amount: totalAmount,
       currency: "INR",
       key_id: process.env.RAZORPAY_KEY_ID,
-      booking_id: booking.id,
-      // specific customer details for pre-fill could be sent too
-      customer_name: booking.customerName,
-      customer_email: booking.customerEmail,
-      customer_contact: booking.customerMobile,
+      booking_ids: targetIds, // Return list
+      customer_name: bookings[0].customerName, // Assume same customer
+      customer_email: bookings[0].customerEmail,
+      customer_contact: bookings[0].customerMobile,
     });
   } catch (error) {
     console.error("Create Order Error:", error);
@@ -91,125 +100,117 @@ exports.verifyPayment = async (req, res) => {
       return res.status(400).json({ error: "Invalid signature" });
     }
 
-    // 2. Find Booking
-    const booking = await Booking.findOne({
+    // 2. Find Bookings (plural)
+    const bookings = await Booking.findAll({
       where: { razorpayOrderId: razorpay_order_id },
       transaction: t,
     });
 
-    if (!booking) {
+    if (bookings.length === 0) {
       await t.rollback();
       return res
         .status(404)
-        .json({ error: "Booking not found for this order" });
+        .json({ error: "Bookings not found for this order" });
     }
 
-    if (booking.paymentStatus === "paid") {
-      await t.commit();
-      return res.json({ success: true, message: "Already paid" });
-    }
-
-    // 3. Create Payment Record
-    const payment = await Payment.create(
-      {
-        bookingId: booking.id,
-        orderId: razorpay_order_id,
-        paymentId: razorpay_payment_id,
-        signature: razorpay_signature,
-        amount: booking.paymentAmount,
-        status: "paid",
-        method: "online", // We could fetch from Razorpay API to know specific method (card/upi), assume online for now
-      },
-      { transaction: t }
-    );
-
-    // 4. Commission Logic
-    const grossAmount = parseFloat(booking.paymentAmount);
-
-    // Fetch Org Commission Settings
-    const commissionSettings = await PlatformCommission.findOne({
-      where: { orgId: booking.orgId },
-      transaction: t,
-    });
-
-    // Default 10% if not set
-    let commissionRate = 10.0;
-    let isFixed = false;
-
-    if (commissionSettings) {
-      if (commissionSettings.commissionType === "FIXED") {
-        commissionRate = parseFloat(commissionSettings.commissionValue);
-        isFixed = true;
-      } else {
-        commissionRate = parseFloat(commissionSettings.commissionValue);
+    // Process each booking
+    for (const booking of bookings) {
+      if (booking.paymentStatus === "paid") {
+        continue; // Skip if already processed
       }
+
+      // 3. Create Payment Record (One per booking, sharing same razorpay ID)
+      await Payment.create(
+        {
+          bookingId: booking.id,
+          orderId: razorpay_order_id,
+          paymentId: razorpay_payment_id,
+          signature: razorpay_signature,
+          amount: booking.paymentAmount,
+          status: "paid",
+          method: "online",
+        },
+        { transaction: t }
+      );
+
+      // 4. Commission Logic
+      const grossAmount = parseFloat(booking.paymentAmount || 0);
+
+      // Fetch Org Commission Settings (Optimized: fetching inside loop, could be cached if same org)
+      // Assuming all bookings same org
+      const commissionSettings = await PlatformCommission.findOne({
+        where: { orgId: booking.orgId },
+        transaction: t,
+      });
+
+      let commissionRate = 10.0;
+      let isFixed = false;
+
+      if (commissionSettings) {
+        if (commissionSettings.commissionType === "FIXED") {
+          commissionRate = parseFloat(commissionSettings.commissionValue);
+          isFixed = true;
+        } else {
+          commissionRate = parseFloat(commissionSettings.commissionValue);
+        }
+      }
+
+      let platformFee = 0;
+      if (isFixed) {
+        platformFee = commissionRate;
+      } else {
+        platformFee = (grossAmount * commissionRate) / 100;
+      }
+
+      if (platformFee > grossAmount) platformFee = grossAmount;
+      const vendorNet = grossAmount - platformFee;
+
+      // 5. Update Booking
+      await booking.update(
+        {
+          status: "confirmed",
+          paymentStatus: "paid",
+          razorpayPaymentId: razorpay_payment_id,
+          platformCommissionAmount: platformFee,
+          vendorReceivableAmount: vendorNet,
+        },
+        { transaction: t }
+      );
+
+      // 6. Create Vendor Ledger Entry
+      await VendorLedger.create(
+        {
+          orgId: booking.orgId,
+          bookingId: booking.id,
+          grossAmount: grossAmount,
+          platformCommission: platformFee,
+          netAmount: vendorNet,
+          status: "UNPAID",
+        },
+        { transaction: t }
+      );
     }
-
-    let platformFee = 0;
-    if (isFixed) {
-      platformFee = commissionRate;
-    } else {
-      platformFee = (grossAmount * commissionRate) / 100;
-    }
-
-    // Cap fee? Ensure it doesn't exceed gross?
-    if (platformFee > grossAmount) platformFee = grossAmount;
-
-    const vendorNet = grossAmount - platformFee;
-
-    // 5. Update Booking
-    await booking.update(
-      {
-        status: "confirmed",
-        paymentStatus: "paid",
-        razorpayPaymentId: razorpay_payment_id,
-        platformCommissionAmount: platformFee,
-        vendorReceivableAmount: vendorNet,
-      },
-      { transaction: t }
-    );
-
-    // 6. Create Vendor Ledger Entry
-    await VendorLedger.create(
-      {
-        orgId: booking.orgId,
-        bookingId: booking.id,
-        grossAmount: grossAmount,
-        platformCommission: platformFee,
-        netAmount: vendorNet,
-        status: "UNPAID", // Payout pending
-      },
-      { transaction: t }
-    );
 
     await t.commit();
 
     res.json({
       success: true,
-      message: "Payment verified and booking confirmed",
+      message: "Payment verified and bookings confirmed",
     });
 
     // 7. Post-Transaction Notifications (Non-blocking)
-    // Send Email
-    const service = await booking.getService(); // Helper if association loaded?
-    // Actually better to re-fetch with inclusions or just use what we have
-    // booking.getService() is a promise provided by Sequelize if association is belongsTo
-    // but we assume standard include needed usually.
-    // Let's rely on basic emailService call
-    try {
-      // Need service details for email
-      const srv = await booking.getService();
-      // const org ... logic inside emailService potentially
-      // Check 'emailService.sendBookingConfirmation' signature
-      // It expects (booking, service, org).
-      // We need to fetch/mock these.
-      // For now, simpler to skip or do minimal fetch
-      emailService
-        .sendBookingConfirmation(booking, srv, { id: booking.orgId })
-        .catch((e) => console.error("Email error", e));
-    } catch (e) {
-      console.error("Post-payment email error", e);
-    }
+    // Send Email for EACH booking? Or grouped?
+    // Existing logic sends 1 email per booking usually.
+    bookings.forEach(async (booking) => {
+      try {
+        const srv = await booking.getService();
+        emailService
+          .sendBookingConfirmation(booking, srv, { id: booking.orgId })
+          .catch((e) => console.error("Email error", e));
+      } catch (e) {
+        console.error("Post-payment email error", e);
+      }
+    });
   } catch (error) {
     console.error("Verify Payment Error:", error);
     if (t && !t.finished) await t.rollback();
@@ -442,6 +443,8 @@ exports.generateMonthlyInvoice = async (req, res) => {
     const invoiceData = {
       invoiceId: `INV-${year}${month}-${orgId}`,
       orgId: orgId,
+      orgAddress: org ? org.address : "Vendor Organization",
+      contactPhone: org ? org.contactPhone : "--",
       orgName: org ? org.name : "Vendor Organization",
       totalAmount: totalCommission.toFixed(2),
       items: [

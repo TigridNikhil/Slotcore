@@ -49,11 +49,7 @@ export default function SuccessStep({ onReset, primaryColor, booking }) {
                   `/bookings/${booking.id}/invoice`,
                   {
                     responseType: "blob",
-                    headers: {
-                      // If public, might need token, but usually basic auth or open for MVP
-                      // or use the 'public/verify' token if stored.
-                      // Ideally, we depend on backend checking booking ID valid.
-                    },
+                    headers: {},
                   }
                 );
                 const url = window.URL.createObjectURL(

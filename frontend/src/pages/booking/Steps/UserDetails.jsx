@@ -11,12 +11,13 @@ export default function UserDetails({
   slot,
   primaryColor,
   loading,
+  initialData,
 }) {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    mobile: "",
-    notes: "",
+    name: initialData?.name || "",
+    email: initialData?.email || "",
+    mobile: initialData?.mobile || "",
+    notes: initialData?.notes || "",
   });
 
   const handleSubmit = (e) => {

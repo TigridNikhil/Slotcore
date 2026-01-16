@@ -22,7 +22,10 @@ export default function PaymentStep({
 }) {
   const [paymentMethod, setPaymentMethod] = useState("online"); // 'online' | 'venue'
 
-  const totalAmount = services.reduce((acc, s) => acc + s.price, 0);
+  const totalAmount = services.reduce(
+    (acc, s) => acc + (parseFloat(s.price) || 0),
+    0
+  );
 
   const handlePay = () => {
     onSubmit({ paymentMethod });

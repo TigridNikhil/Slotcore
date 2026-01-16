@@ -47,6 +47,9 @@ const publicBookingSlice = createSlice({
       state.error = action.payload;
       state.loading = false;
     },
+    resetLoading: (state) => {
+      state.loading = false;
+    },
     resetBookingState: (state) => {
       state.slots = [];
       state.bookingSuccess = false;
@@ -66,6 +69,7 @@ export const {
   setCreatedBooking,
   setError,
   resetBookingState,
+  resetLoading,
 } = publicBookingSlice.actions;
 
 export default publicBookingSlice.reducer;

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { useEffect } from "react";
 
 export default function MainLayout({ children }) {
   // If children are passed, render them. If not, render Outlet for router-based usage.
@@ -12,8 +13,15 @@ export default function MainLayout({ children }) {
   const toggleMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
   const closeMenu = () => setIsMobileMenuOpen(false);
 
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "auto";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isMobileMenuOpen]);
+
   return (
-    <div className="bg-gradient-to-b from-white to-neutral-50 text-neutral-900 min-h-screen font-sans flex flex-col">
+    <div className="">
       <Navbar
         toggleMenu={toggleMenu}
         closeMenu={closeMenu}
@@ -21,7 +29,7 @@ export default function MainLayout({ children }) {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1">{content}</main>
+      <main className="flex-1 pt-24">{content}</main>
 
       {/* Premium Footer */}
       <Footer />

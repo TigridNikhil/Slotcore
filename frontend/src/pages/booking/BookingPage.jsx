@@ -6,11 +6,13 @@ import {
   fetchPublicSlots,
   createPublicBooking,
   fetchPublicLocations,
+  cancelPublicBooking,
 } from "../../operations/publicBooking/publicBookingAction";
 import {
   resetBookingState,
   setBookingSuccess,
   setCreatedBooking,
+  resetLoading,
 } from "../../operations/publicBooking/publicBookingSlice";
 import { AnimatePresence } from "framer-motion";
 
@@ -103,6 +105,14 @@ export default function BookingPage() {
     setStep(nextStep);
   };
 
+  // New: Hold pending booking details for cleanup
+  const [pendingBookingResponse, setPendingBookingResponse] = useState(null);
+
+  // Reset pending booking if key details change
+  useEffect(() => {
+    setPendingBookingResponse(null);
+  }, [selectedSlot, selectedServices, customerData]);
+
   // Step 4 Payment Submit -> Actual Create
   const handlePaymentSubmit = async ({ paymentMethod }) => {
     const bookingPayload = {
@@ -119,31 +129,26 @@ export default function BookingPage() {
     const result = await dispatch(createPublicBooking(bookingPayload));
 
     if (result && result.success) {
-      // check result exists and success
       if (paymentMethod === "online" && result.data.summary?.paymentRequired) {
-        // Handle Razorpay with Backend Provided Details
-        handleRazorpay(result.data.summary);
+        setPendingBookingResponse(result.data);
+        handleRazorpay(result.data.summary, result.data.bookingToken);
+        dispatch(resetLoading());
       } else {
-        // If venue or Free, success is handled by slice/effect or we force it here?
-        // Dispatch setBookingSuccess handled by effect if bookingSuccess state is true?
-        // createPublicBooking thunk usually dispatches success.
-        // If payment required, the thunk might set 'loading' false but not 'success' true fully?
-        // We rely on 'handleRazorpay' to finalize.
-        // If NOT online, we assume confirmed.
+        // Venue/Free handled by action/slice
       }
     }
   };
 
-  const handleRazorpay = async (summary) => {
+  const handleRazorpay = async (summary, bookingToken) => {
     try {
       // summary contains: { paymentRequired, totalPayable, bookings: [...] }
-      const booking = summary.bookings[0];
+      const bookings = summary.bookings; // Get all bookings
       const amount = summary.totalPayable;
 
       // 1. Create Order
       const orderRes = await axiosInstance.post("/payment/order", {
-        bookingId: booking.id, // Use ID from backend response
-        amount, // redundant if backend re-calcs, but helpful
+        bookingIds: bookings.map((b) => b.id), // Send ALL IDs
+        amount,
       });
 
       const { order_id, amount: orderAmount, currency, key_id } = orderRes.data;
@@ -165,7 +170,13 @@ export default function BookingPage() {
             });
 
             if (verifyRes.data.success) {
-              dispatch(setCreatedBooking(booking)); // Ensure booking is set
+              setPendingBookingResponse(null); // Clear pending, it's success
+
+              // Use the first booking for display purposes in SuccessStep
+              if (bookings && bookings.length > 0) {
+                dispatch(setCreatedBooking(bookings[0]));
+              }
+
               dispatch(setBookingSuccess(true));
               showNotification({
                 type: "SUCCESS",
@@ -179,6 +190,25 @@ export default function BookingPage() {
             });
             console.error(err);
           }
+        },
+        modal: {
+          ondismiss: function () {
+            // User closed the modal without paying
+            if (bookingToken) {
+              // Pass all IDs, though backend relies on token
+              dispatch(
+                cancelPublicBooking(
+                  bookings.map((b) => b.id),
+                  bookingToken
+                )
+              );
+              showNotification({
+                type: "INFO",
+                message: "Payment cancelled. Booking cleared.",
+              });
+              setPendingBookingResponse(null);
+            }
+          },
         },
         prefill: {
           name: customerData.name,
@@ -289,6 +319,7 @@ export default function BookingPage() {
             services={selectedServices}
             slot={selectedSlot}
             onSubmit={handleUserDetailsSubmit} // Changed
+            initialData={customerData}
             onBack={() => setStep(2)}
             loading={loading}
             primaryColor={tenant.primaryColor}
