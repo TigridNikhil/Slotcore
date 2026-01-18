@@ -18,7 +18,7 @@ async function startServer() {
     // Sync models (use { force: true } only for dev/reset)
     await sequelize.sync({ alter: true });
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
       initCronJobs();
     });

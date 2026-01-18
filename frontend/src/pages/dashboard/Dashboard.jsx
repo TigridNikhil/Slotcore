@@ -21,6 +21,7 @@ import AvailabilitySettings from "./availability/AvailabilitySettings";
 import LocationManagement from "./locations/LocationManagement";
 import ResourcesList from "./resources/ResourcesList";
 import Payments from "./Payments";
+import ScanBooking from "./ScanBooking";
 
 import NotificationSettings from "./NotificationSettings";
 
@@ -40,6 +41,7 @@ import {
   FaUsers,
   FaMapMarkerAlt,
   FaBoxOpen,
+  FaQrcode,
 } from "react-icons/fa";
 import {
   getDashboardStats,
@@ -100,6 +102,12 @@ export default function Dashboard() {
       label: "Bookings",
       path: "/dashboard/bookings",
       icon: <FaCalendarAlt />,
+      roles: ["admin", "org_admin", "staff"],
+    },
+    {
+      label: "Scan Booking",
+      path: "/dashboard/scan",
+      icon: <FaQrcode />,
       roles: ["admin", "org_admin", "staff"],
     },
     {
@@ -714,6 +722,19 @@ export default function Dashboard() {
                   transition={{ duration: 0.3 }}
                 >
                   <Payments />
+                </motion.div>
+              }
+            />
+            <Route
+              path="/scan"
+              element={
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ScanBooking />
                 </motion.div>
               }
             />

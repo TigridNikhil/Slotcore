@@ -176,8 +176,10 @@ export default function CalendarView() {
                         key={booking.id}
                         className={`text-xs p-1.5 rounded border border-l-4 cursor-pointer hover:shadow-md transition-all
                           ${
-                            booking.status === "confirmed"
+                            booking.status === "completed"
                               ? "bg-green-50 border-green-200 border-l-green-500 text-green-700"
+                              : booking.status === "pending"
+                              ? "bg-blue-50 border-blue-200 border-l-blue-500 text-blue-700"
                               : booking.status === "cancelled"
                               ? "bg-red-50 border-red-200 border-l-red-500 text-red-700 opacity-60"
                               : "bg-yellow-50 border-yellow-200 border-l-yellow-500 text-yellow-700"

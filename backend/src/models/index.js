@@ -7,6 +7,7 @@ const Service = require("./Service");
 const Booking = require("./Booking");
 const Payment = require("./Payment");
 const PageSection = require("./PageSection");
+const Consumer = require("./Consumer");
 
 // ========================
 // Associations
@@ -247,5 +248,7 @@ module.exports = {
   VendorLedger,
   PlatformCommission,
   OrgNotificationSettings,
+  OrgNotificationSettings,
   Category,
+  Consumer,
 };

@@ -14,61 +14,129 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
+const calendarUtils = require("../utils/calendarUtils");
 
 exports.sendBookingConfirmation = async (booking, service, org) => {
   try {
     const formattedDate = new Date(booking.startTime).toLocaleString();
     const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-      org.address || ""
+      org.address || "",
     )}`;
 
+    // Generate Calendar Links
+    const googleCalendarLink = calendarUtils.generateGoogleCalendarLink(
+      booking,
+      service,
+      org,
+    );
+    const icsContent = calendarUtils.generateICS(booking, service, org);
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid ${
-          org.primaryColor || "#4F46E5"
-        };">
-           <h1 style="color: ${org.primaryColor || "#333"};">${org.name}</h1>
-        </div>
-        
-        <h2>Booking Confirmed! ✅</h2>
-        <p>Hi ${booking.customerName},</p>
-        <p>Your appointment for <strong>${
-          service.name
-        }</strong> has been successfully booked.</p>
-        
-        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>📅 Date:</strong> ${formattedDate}</p>
-            <p><strong>🆔 Booking ID:</strong> ${booking.bookingId || "N/A"}</p>
-            <p><strong>🕒 Duration:</strong> ${service.durationMin} mins</p>
-            <p><strong>📍 Location:</strong> ${org.address || "Online/TBD"}</p>
-            ${
-              booking.customerMobile
-                ? `<p><strong>📱 Mobile:</strong> ${booking.customerMobile}</p>`
-                : ""
-            }
-             <p><strong>💰 Price:</strong> ${
-               service.price > 0 ? "Pay at venue: " + service.price : "Free"
-             }</p>
-        </div>
+<div style="background:#f4f6fb;padding:24px 0;">
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.05);">
 
-        <p><a href="${mapLink}" style="background-color: ${
-      org.primaryColor || "#4F46E5"
-    }; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Get Directions</a></p>
+    <!-- Header -->
+    <div style="background:${org.primaryColor || "#4F46E5"};padding:24px;text-align:center;">
+      <h1 style="margin:0;font-size:22px;color:#ffffff;letter-spacing:0.5px;">
+        ${org.name}
+      </h1>
+      <p style="margin:6px 0 0;color:#e0e7ff;font-size:14px;">
+        Appointment Confirmation
+      </p>
+    </div>
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 12px; color: #888;">Need to reschedule? <a href="${
-          process.env.FRONTEND_URL || "http://localhost:5173"
-        }/booking/${
-      booking.id
-    }">Manage your booking here</a> or reply to this email.</p>
+    <!-- Body -->
+    <div style="padding:28px;">
+      <h2 style="margin:0 0 12px;font-size:20px;color:#111827;">
+        Booking Confirmed ✅
+      </h2>
+
+      <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6;">
+        Hi <strong>${booking.customerName}</strong>,<br/>
+        Your appointment for <strong>${service.name}</strong> has been successfully scheduled.
+      </p>
+
+      <!-- Booking Card -->
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin:20px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="font-size:14px;color:#374151;">
+          <tr>
+            <td style="padding:6px 0;"><strong>📅 Date</strong></td>
+            <td style="padding:6px 0;">${formattedDate}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;"><strong>🆔 Booking ID</strong></td>
+            <td style="padding:6px 0;">${booking.bookingId || "N/A"}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;"><strong>🕒 Duration</strong></td>
+            <td style="padding:6px 0;">${service.durationMin} mins</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;"><strong>📍 Location</strong></td>
+            <td style="padding:6px 0;">${org.address || "Online / TBD"}</td>
+          </tr>
+          ${
+            booking.customerMobile
+              ? `<tr>
+                  <td style="padding:6px 0;"><strong>📱 Mobile</strong></td>
+                  <td style="padding:6px 0;">${booking.customerMobile}</td>
+                </tr>`
+              : ""
+          }
+          <tr>
+            <td style="padding:6px 0;"><strong>💰 Price</strong></td>
+            <td style="padding:6px 0;">
+              ${service.price > 0 ? `${service.price}` : "Free"}
+            </td>
+          </tr>
+        </table>
       </div>
-    `;
+
+      <!-- Actions -->
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${mapLink}" 
+           style="display:inline-block;background:${org.primaryColor || "#4F46E5"};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-size:14px;margin:6px;">
+          📍 Get Directions
+        </a>
+
+        <a href="${googleCalendarLink}" 
+           style="display:inline-block;background:#ffffff;color:${org.primaryColor || "#4F46E5"};border:1px solid ${org.primaryColor || "#4F46E5"};text-decoration:none;padding:12px 22px;border-radius:6px;font-size:14px;margin:6px;">
+          📅 Add to Google Calendar
+        </a>
+
+        <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/review/${booking.id}" 
+           style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-size:14px;margin:6px;">
+          ⭐ Write a Review
+        </a>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+
+      <!-- Footer -->
+      <p style="font-size:12px;color:#6b7280;text-align:center;line-height:1.5;">
+        Need to reschedule or manage your booking?<br/>
+        <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/booking/${booking.id}" 
+           style="color:${org.primaryColor || "#4F46E5"};text-decoration:none;">
+          Manage your booking
+        </a>
+        or reply to this email.
+      </p>
+    </div>
+  </div>
+</div>
+`;
 
     const info = await transporter.sendMail({
       from: `"${org.name}" <${process.env.SMTP_USER}>`,
       to: booking.customerEmail,
       subject: `Booking Confirmed: ${service.name} at ${org.name}`,
       html: html,
+      attachments: [
+        {
+          filename: "event.ics",
+          content: icsContent,
+          contentType: "text/calendar",
+        },
+      ],
     });
 
     console.log("Message sent: %s", info.messageId);
@@ -127,10 +195,10 @@ exports.sendBookingCancellation = async (booking, org, reason) => {
         <h2 style="color: #ef4444;">Booking Cancelled ❌</h2>
         <p>Hi ${booking.customerName},</p>
         <p>Your appointment on <strong>${new Date(
-          booking.startTime
+          booking.startTime,
         ).toLocaleString()}</strong> at <strong>${org.name}</strong> (ID: ${
-      booking.bookingId || "N/A"
-    }) has been cancelled.</p>
+          booking.bookingId || "N/A"
+        }) has been cancelled.</p>
         
         ${
           reason
@@ -173,13 +241,13 @@ exports.sendBookingReschedule = async (booking, org, newTime) => {
         <h2 style="color: #3b82f6;">Booking Rescheduled 🗓️</h2>
         <p>Hi ${booking.customerName},</p>
         <p>Your appointment at <strong>${org.name}</strong> (ID: ${
-      booking.bookingId || "N/A"
-    }) has been rescheduled.</p>
+          booking.bookingId || "N/A"
+        }) has been rescheduled.</p>
         
         <div style="background-color: #eff6ff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #dbeafe;">
             <p style="font-size: 16px; color: #1e40af; margin-bottom: 5px;"><strong>New Time:</strong></p>
             <p style="font-size: 20px; font-weight: bold; margin: 0; color: #1e3a8a;">${new Date(
-              newTime
+              newTime,
             ).toLocaleString()}</p>
         </div>
 
@@ -265,7 +333,7 @@ exports.sendBookingReminder = async (booking, org, type) => {
         <div style="background-color: #fffbeb; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #fcd34d;">
             <p style="font-size: 16px; margin-bottom: 5px;"><strong>Date & Time:</strong></p>
             <p style="font-size: 18px; font-weight: bold; margin: 0; color: #92400e;">${new Date(
-              booking.startTime
+              booking.startTime,
             ).toLocaleString()}</p>
         </div>
 
@@ -362,12 +430,43 @@ exports.sendMonthlySettlementReminder = async (org, totalAmount, count) => {
       subject: `Urgent: Total Settlement Due ₹${totalAmount}`,
       html: html,
     });
-    console.log(
-      `[Email] Monthly settlement reminder sent to ${org.contactEmail}`
-    );
     return true;
   } catch (error) {
     console.error("Monthly Reminder Error:", error);
+    return false;
+  }
+};
+
+exports.sendOtp = async (email, otp) => {
+  try {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #4F46E5;">Login Verification 🔐</h2>
+        <p>Hi there,</p>
+        <p>Use the code below to log in to <strong>Slotcore</strong>.</p>
+        
+        <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center; letter-spacing: 4px;">
+            <span style="font-size: 32px; font-weight: bold; color: #0284c7;">${otp}</span>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+        
+        <p style="font-size: 13px; color: #999; margin-top: 30px; text-align: center;">
+           Slotcore Secure Login
+        </p>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"Slotcore Auth" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `Your Login Code: ${otp}`,
+      html: html,
+    });
+    console.log(`[Email] OTP sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error("OTP Email Error:", error);
     return false;
   }
 };

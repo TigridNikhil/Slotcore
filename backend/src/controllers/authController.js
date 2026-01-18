@@ -54,7 +54,7 @@ exports.registerOrganization = async (req, res) => {
         categoryId: categoryId || null,
         settings: {},
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     // 5. Create Admin User
@@ -69,7 +69,7 @@ exports.registerOrganization = async (req, res) => {
         passwordHash,
         role: "admin",
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     await t.commit();
@@ -78,7 +78,7 @@ exports.registerOrganization = async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, orgId: organization.id, role: user.role },
       process.env.JWT_SECRET || "secret_dev_key",
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.status(201).json({
@@ -156,9 +156,14 @@ exports.login = async (req, res) => {
 
     // 4. Generate Token
     const token = jwt.sign(
-      { userId: user.id, orgId: user.orgId, role: user.role },
+      {
+        userId: user.id,
+        orgId: user.orgId,
+        role: user.role,
+        email: user.email,
+      },
       process.env.JWT_SECRET || "secret_dev_key",
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.json({

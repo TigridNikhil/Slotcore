@@ -18,12 +18,19 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "secret_dev_key"
+      process.env.JWT_SECRET || "secret_dev_key",
     );
     req.user = decoded;
 
+    console.log("Decoded token:", decoded);
+
     // Safety check: ensure token matches current tenant if tenant is resolved
-    if (req.orgId && req.user.orgId !== req.orgId) {
+    // EXCEPTION: Consumers (Mobile App Users) are not tied to an org
+    if (
+      req.orgId &&
+      req.user.role !== "consumer" &&
+      req.user.orgId !== req.orgId
+    ) {
       return res.status(403).json({
         error: "Access denied: User does not belong to this organization.",
       });

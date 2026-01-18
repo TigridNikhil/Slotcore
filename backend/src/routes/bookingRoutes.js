@@ -62,7 +62,7 @@ const requireBookingPermission = (req, res, next) => {
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET || "secret_dev_key"
+        process.env.JWT_SECRET || "secret_dev_key",
       );
       req.user = decoded;
       return next();
@@ -76,7 +76,7 @@ const requireBookingPermission = (req, res, next) => {
     try {
       const decoded = jwt.verify(
         bookingToken,
-        process.env.JWT_SECRET || "secret_dev_key"
+        process.env.JWT_SECRET || "secret_dev_key",
       );
       if (decoded.role === "public_customer") {
         req.bookingAuth = decoded;
@@ -95,66 +95,72 @@ router.get(
   "/slots",
   publicApiLimiter,
   validateSlots,
-  bookingController.getAvailableSlots
+  bookingController.getAvailableSlots,
 );
 router.post(
   "/",
   bookingLimiter,
   validateBooking,
-  bookingController.createBooking
+  bookingController.createBooking,
 );
 
 // Public Booking Management Verification
 router.post(
   "/public/verify",
   publicApiLimiter,
-  bookingController.verifyPublicAccess
+  bookingController.verifyPublicAccess,
 );
 
 router.post(
   "/public/cancel",
   publicApiLimiter,
-  bookingController.cancelPublicBookingBatch
+  bookingController.cancelPublicBookingBatch,
 );
 
 // Booking Management (Admin or Verified Public)
 router.put(
   "/:id/cancel",
   requireBookingPermission,
-  bookingController.cancelBooking
+  bookingController.cancelBooking,
 );
 router.put(
   "/:id/reschedule",
   requireBookingPermission,
-  bookingController.rescheduleBooking
+  bookingController.rescheduleBooking,
 );
 router.put(
   "/:id/noshow",
   auth,
   authorize(["admin", "org_admin", "staff"]),
-  bookingController.markNoShow
+  bookingController.markNoShow,
 );
 router.put(
   "/:id/complete",
   auth,
   authorize(["admin", "org_admin", "staff"]),
-  bookingController.markCompleted
+  bookingController.markCompleted,
 );
+
+// User's own bookings
+// Mobile/User routes
+router.get("/my-stats", auth, bookingController.getUserStats);
+router.get("/my-bookings", auth, bookingController.listUserBookings);
 
 // Protected endpoints (Admin Dashboard)
 router.get("/", auth, bookingController.listBookings);
+router.get("/:id", auth, bookingController.getBookingDetails); // Fetch single booking by ID
 router.get(
   "/:id/logs",
   auth,
   authorize(["admin", "org_admin", "staff"]),
-  auditController.getBookingLogs
+  auditController.getBookingLogs,
 );
 
 // Invoices
 router.get(
   "/:id/invoice",
   auth, // Or requireBookingPermission if Public wants to download
-  invoiceController.generateInvoice
+  invoiceController.generateInvoice,
 );
 
 module.exports = router;

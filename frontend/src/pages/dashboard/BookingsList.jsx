@@ -391,7 +391,7 @@ export default function BookingsList() {
               </th>
             </tr>
           </thead>
-          <motion.tbody
+          <tbody
             variants={container}
             initial="hidden"
             animate="show"
@@ -408,7 +408,7 @@ export default function BookingsList() {
               </tr>
             )}
             {bookings.map((booking) => (
-              <motion.tr
+              <tr
                 key={booking.id}
                 variants={item}
                 className="hover:bg-indigo-50/30 transition-colors"
@@ -526,9 +526,9 @@ export default function BookingsList() {
                     )}
                   </div>
                 </td>
-              </motion.tr>
+              </tr>
             ))}
-          </motion.tbody>
+          </tbody>
         </table>
       </div>
 

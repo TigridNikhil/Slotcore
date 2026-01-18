@@ -21,15 +21,19 @@ const tenantResolver = async (req, res, next) => {
 
     // 1. Try Header (Prioritize for local testing/API usage)
     const headerSlug = req.headers["x-tenant-slug"];
+    // 2. Try Query Param (For direct links/downloads)
+    const querySlug = req.query.slug || req.query.tenant;
 
     console.log(
-      `[TenantResolver] Host: ${hostname}, HeaderSlug: ${headerSlug}, Base: ${BASE_DOMAIN}`
+      `[TenantResolver] Host: ${hostname}, HeaderSlug: ${headerSlug}, QuerySlug: ${querySlug}, Base: ${BASE_DOMAIN}`,
     );
 
     if (headerSlug) {
       subdomain = headerSlug;
+    } else if (querySlug) {
+      subdomain = querySlug;
     }
-    // 2. Try Subdomain
+    // 3. Try Subdomain
     else if (!isMainDomain) {
       subdomain = hostname.split(".")[0];
     }

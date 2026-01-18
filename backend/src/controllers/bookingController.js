@@ -8,12 +8,51 @@ const {
   Payment,
   VendorLedger,
   PlatformCommission,
+  Customer,
+  User,
 } = require("../models");
 const generateSlots = require("../utils/slotGenerator");
 const { Op } = require("sequelize");
 const { validationResult } = require("express-validator");
 const emailService = require("../services/emailService");
 const jwt = require("jsonwebtoken");
+const path = require("path");
+const fs = require("fs");
+
+exports.listUserBookings = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { page = 1, limit = 10, status, date } = req.query; // Get date
+    // ... basic validation ...
+
+    if (!userEmail) {
+      return res.status(400).json({ error: "User email not found in token" });
+    }
+
+    const whereClause = {
+      customerEmail: userEmail,
+      orgId: req.orgId,
+    };
+
+    if (status && status !== "all") {
+      whereClause.status = status;
+    }
+
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      whereClause.startTime = {
+        [Op.between]: [startOfDay, endOfDay],
+      };
+    }
+  } catch (error) {
+    console.error("Error listing user bookings:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 exports.getAvailableSlots = async (req, res) => {
   const errors = validationResult(req);
@@ -107,7 +146,7 @@ exports.getAvailableSlots = async (req, res) => {
           if (!schedule) return null; // This staff is not working today
 
           const myBookings = staffBookings.filter(
-            (b) => b.staffId === staff.id
+            (b) => b.staffId === staff.id,
           );
 
           return {
@@ -148,7 +187,7 @@ exports.getAvailableSlots = async (req, res) => {
 
     // Prioritize specific override
     const specificOverride = overrides.find(
-      (o) => o.serviceId === primaryService.id
+      (o) => o.serviceId === primaryService.id,
     );
     const genericOverride = overrides.find((o) => o.serviceId === null);
     const activeOverride = specificOverride || genericOverride;
@@ -242,7 +281,7 @@ exports.getAvailableSlots = async (req, res) => {
       bufferTime,
       orgBreakTime, // Fallback Org Break
       capacity,
-      staffResources // NEW: specific Staff Resources
+      staffResources, // NEW: specific Staff Resources
     );
 
     res.json({ date, slots });
@@ -340,7 +379,7 @@ exports.createBooking = async (req, res) => {
 
     // Re-order services
     const orderedServices = targetServiceIds.map((id) =>
-      services.find((s) => s.id === id)
+      services.find((s) => s.id === id),
     );
 
     let currentStartTime = new Date(startTime);
@@ -372,7 +411,7 @@ exports.createBooking = async (req, res) => {
           });
 
           const serviceIdsUsingResource = servicesUsingResource.map(
-            (sr) => sr.serviceId
+            (sr) => sr.serviceId,
           );
 
           // Find overlapping bookings for ANY of these services
@@ -400,7 +439,7 @@ exports.createBooking = async (req, res) => {
 
           if (usedQty + qtyRequired > totalQty) {
             console.log(
-              `[CreateBooking] Resource Conflict: ${resource.name} (Used: ${usedQty}, Req: ${qtyRequired}, Total: ${totalQty})`
+              `[CreateBooking] Resource Conflict: ${resource.name} (Used: ${usedQty}, Req: ${qtyRequired}, Total: ${totalQty})`,
             );
             await t.rollback();
             return res
@@ -430,7 +469,7 @@ exports.createBooking = async (req, res) => {
 
         const conflictedStaffIds = conflicts.map((b) => b.staffId);
         const freeStaff = candidates.find(
-          (id) => !conflictedStaffIds.includes(id)
+          (id) => !conflictedStaffIds.includes(id),
         );
 
         if (freeStaff) assignedStaffId = freeStaff;
@@ -468,7 +507,7 @@ exports.createBooking = async (req, res) => {
             mobile: req.body.customerMobile,
             totalBookings: 0,
           },
-          { transaction: t }
+          { transaction: t },
         );
       }
 
@@ -476,7 +515,7 @@ exports.createBooking = async (req, res) => {
       await customer.increment("totalBookings", { by: 1, transaction: t });
       await customer.update(
         { lastBookingDate: currentStartTime },
-        { transaction: t }
+        { transaction: t },
       );
 
       // --- PAYMENT STATUS LOGIC ---
@@ -517,7 +556,7 @@ exports.createBooking = async (req, res) => {
           locationId: locationId || null,
           notes,
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       createdBookings.push({ booking, service: srv });
@@ -534,7 +573,7 @@ exports.createBooking = async (req, res) => {
         bookingIds: createdBookings.map((cb) => cb.booking.id),
       },
       process.env.JWT_SECRET || "secret_dev_key",
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
     res.status(201).json({
@@ -618,7 +657,7 @@ exports.listBookings = async (req, res) => {
 
     console.log(
       "[ListBookings] Final Where Clause:",
-      JSON.stringify(whereClause)
+      JSON.stringify(whereClause),
     );
 
     if (status) {
@@ -665,6 +704,43 @@ exports.listBookings = async (req, res) => {
   }
 };
 
+exports.getBookingDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Auth Check: Admin, Org Admin, or Staff
+    if (
+      !req.user ||
+      (req.user.role !== "admin" &&
+        req.user.role !== "org_admin" &&
+        req.user.role !== "staff")
+    ) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const booking = await Booking.findOne({
+      where: {
+        id: id,
+      },
+      include: [
+        { model: Service },
+        { model: Customer, as: "customer" }, // Include Customer details
+        { model: Payment },
+        { association: "staff", attributes: ["id", "name", "email"] },
+      ],
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    res.json(booking);
+  } catch (error) {
+    console.error("Error fetching booking details:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 exports.cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
@@ -707,7 +783,7 @@ exports.cancelBooking = async (req, res) => {
         // But let's assume we allow cancellation but maybe with penalty?
         // For now, allow cancellation but note it might be late.
         console.log(
-          `Cancelling within window (${hoursDiff}h vs ${windowHrs}h)`
+          `Cancelling within window (${hoursDiff}h vs ${windowHrs}h)`,
         );
       }
     }
@@ -763,7 +839,7 @@ exports.cancelBooking = async (req, res) => {
       booking.id,
       "CANCEL",
       req,
-      { reason, previousStatus: "confirmed" } // Assuming it was confirmed
+      { reason, previousStatus: "confirmed" }, // Assuming it was confirmed
     );
 
     res.json({ success: true, booking });
@@ -1021,7 +1097,7 @@ exports.markCompleted = async (req, res) => {
       });
 
       const locStrategy = allStrategies.find(
-        (p) => p.locationId === booking.locationId
+        (p) => p.locationId === booking.locationId,
       );
       const defaultStrategy = allStrategies.find((p) => p.locationId === null);
       const activeStrategy = locStrategy || defaultStrategy;
@@ -1043,7 +1119,7 @@ exports.markCompleted = async (req, res) => {
             method: "pay_at_venue", // Balance collected on site
           });
           console.log(
-            `[markCompleted] Collected Balance: ${balance} for Booking ${booking.id}`
+            `[markCompleted] Collected Balance: ${balance} for Booking ${booking.id}`,
           );
 
           // Should we update booking.paymentAmount?
@@ -1070,7 +1146,7 @@ exports.markCompleted = async (req, res) => {
       if (allPayments.length > 0) {
         grossAmount = allPayments.reduce(
           (sum, p) => sum + parseFloat(p.amount),
-          0
+          0,
         );
       }
 
@@ -1123,7 +1199,7 @@ exports.markCompleted = async (req, res) => {
           status: "UNSETTLED",
         });
         console.log(
-          `[markCompleted] Ledger Created: ${paymentMode} - ${settlementDirection} - Net: ${netAmount}`
+          `[markCompleted] Ledger Created: ${paymentMode} - ${settlementDirection} - Net: ${netAmount}`,
         );
       }
     } catch (err) {
@@ -1159,7 +1235,7 @@ exports.cancelPublicBookingBatch = async (req, res) => {
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "secret_dev_key"
+      process.env.JWT_SECRET || "secret_dev_key",
     );
 
     if (
@@ -1186,13 +1262,13 @@ exports.cancelPublicBookingBatch = async (req, res) => {
             status: { [Op.ne]: "cancelled" }, // Only cancel if not already
           },
           transaction: t,
-        }
+        },
       );
 
       await t.commit();
 
       console.log(
-        `[BatchCancel] Cancelled ${bookingIds.length} bookings via token.`
+        `[BatchCancel] Cancelled ${bookingIds.length} bookings via token.`,
       );
       res.json({ success: true, message: "Bookings cancelled" });
     } catch (err) {
@@ -1202,5 +1278,118 @@ exports.cancelPublicBookingBatch = async (req, res) => {
   } catch (error) {
     console.error("Batch Cancel Error:", error);
     return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+exports.listUserBookings = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { page = 1, limit = 10, status, date } = req.query; // Get status and date from query
+    const offset = (page - 1) * limit;
+    const limitNum = parseInt(limit);
+
+    if (!userEmail) {
+      return res.status(400).json({ error: "User email not found in token" });
+    }
+
+    const whereClause = {
+      customerEmail: userEmail,
+      orgId: req.orgId,
+    };
+
+    if (status && status !== "all") {
+      whereClause.status = status;
+    }
+
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      whereClause.startTime = {
+        [Op.between]: [startOfDay, endOfDay],
+      };
+    }
+
+    const { count, rows } = await Booking.findAndCountAll({
+      where: whereClause,
+      include: [
+        { model: Service, attributes: ["name", "durationMin", "price"] },
+        { model: Organization, attributes: ["name", "logoUrl", "slug"] },
+        // { association: "staff", attributes: ["name"] },
+      ],
+      order: [["startTime", "DESC"]],
+      limit: limitNum,
+      offset: offset,
+    });
+
+    res.json({
+      bookings: rows,
+      total: count,
+      page: parseInt(page),
+      totalPages: Math.ceil(count / limitNum),
+    });
+  } catch (error) {
+    console.error("List User Bookings Error:", error);
+    res.status(500).json({ error: "Error fetching user bookings" });
+  }
+};
+
+exports.getUserStats = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { orgId } = req; // Optional: restrict to current org context if needed, but "My Stats" usually implies all my bookings across the platform?
+    // Wait, the user is logged into a specific tenant usually?
+    // The mobile app sends x-tenant-slug.
+    // If the user wants stats for THAT org, we filter by orgId.
+    // If the user specific stats are global (unlikely in this tenant-based system), we'd remove orgId.
+    // Let's stick to the current organization context for now as per the rest of the app.
+
+    const whereClause = {
+      customerEmail: userEmail,
+      orgId: req.orgId,
+    };
+
+    // 1. Total Bookings
+    const totalBookings = await Booking.count({
+      where: whereClause,
+    });
+
+    // 2. Upcoming Bookings
+    const upcomingBookings = await Booking.count({
+      where: {
+        ...whereClause,
+        startTime: {
+          [Op.gt]: new Date(),
+        },
+        status: {
+          [Op.notIn]: ["cancelled", "rejected"],
+        },
+      },
+    });
+
+    // 3. Total Spent
+    // Assuming 'paymentAmount' is string decimal.
+    const completedBookings = await Booking.findAll({
+      where: {
+        ...whereClause,
+        status: "confirmed", // or 'completed' if you have that status
+        // paymentStatus: "paid" // Optional: depending on business logic
+      },
+      attributes: ["paymentAmount"],
+    });
+
+    const totalSpent = completedBookings.reduce((sum, booking) => {
+      return sum + parseFloat(booking.paymentAmount || 0);
+    }, 0);
+
+    res.json({
+      totalBookings,
+      upcomingBookings,
+      totalSpent: totalSpent.toFixed(2),
+    });
+  } catch (error) {
+    console.error("Get User Stats Error:", error);
+    res.status(500).json({ error: "Error fetching user stats" });
   }
 };
