@@ -1,10 +1,10 @@
 const cron = require("node-cron");
-const { Organization, Booking, Service } = require("../models");
+const { Organization, Booking, Service, AuditLog } = require("../models");
 const emailService = require("../services/emailService");
 const { Op } = require("sequelize");
 
 // Initialize Cron Jobs
-exports.initCronJobs = () => {
+const initCronJobs = () => {
   console.log("⏰ Initializing Cron Jobs...");
 
   // Daily Report at 20:00 (8 PM) Server Time
@@ -17,37 +17,83 @@ exports.initCronJobs = () => {
   cron.schedule("*/15 * * * *", async () => {
     console.log("⏰ Running Reminder Job...");
     await sendReminders();
-    await completePastBookings();
+    await resolveStaleBookings();
   });
 };
 
-async function completePastBookings() {
+async function resolveStaleBookings() {
   try {
     const now = new Date();
-    // Buffer: 15 mins after end time, or just immediate? Immediate is fine.
-    const bookingsToComplete = await Booking.findAll({
+    // Fetch all confirmed bookings that have ended
+    const potentialStaleBookings = await Booking.findAll({
       where: {
         endTime: { [Op.lt]: now },
         status: "confirmed",
-        // Maybe check payment? depends on policy.
-        // paymentStatus: { [Op.or]: ["paid", "pay_at_venue"] }
-        // For now, trust confirmed status implies ready.
       },
+      include: [
+        {
+          model: Organization,
+          attributes: ["id", "settings"],
+        },
+      ],
     });
 
-    if (bookingsToComplete.length > 0) {
+    if (potentialStaleBookings.length > 0) {
       console.log(
-        `[Auto-Complete] Marking ${bookingsToComplete.length} bookings as awaiting completion.`
+        `[Auto-Resolve] Checking ${potentialStaleBookings.length} past confirmed bookings.`,
       );
-      for (const booking of bookingsToComplete) {
-        booking.status = "awaiting_completion"; // Changed from 'completed'
-        await booking.save();
 
-        // Optional: Notify Staff?
+      for (const booking of potentialStaleBookings) {
+        // 1. Determine Grace Period
+        const orgSettings = booking.Organization?.settings || {};
+        const gracePeriodMins = orgSettings.bookingGracePeriodMins || 10; // Default 10 mins
+
+        // 2. Calculate Expiry Threshold
+        const expiryTime = new Date(
+          new Date(booking.endTime).getTime() + gracePeriodMins * 60000,
+        );
+
+        // 3. Process if past grace period
+        if (now > expiryTime) {
+          let newStatus = "expired";
+          let action = "EXPIRE";
+
+          if (booking.checkedIn) {
+            newStatus = "awaiting_completion"; // Or 'completed' depending on workflow
+            action = "AUTO_COMPLETE";
+          }
+
+          const previousStatus = booking.status;
+          booking.status = newStatus;
+          await booking.save();
+
+          console.log(
+            `[Auto-Resolve] Booking ${booking.id} (${booking.bookingId}) -> ${newStatus}`,
+          );
+
+          // 4. Create Audit Log
+          await AuditLog.create({
+            orgId: booking.orgId,
+            entityId: booking.id,
+            entityType: "Booking",
+            action: action,
+            performedBy: null, // System
+            performedByEmail: "system@scheduler",
+            changes: {
+              previousStatus: previousStatus,
+              newStatus: newStatus,
+              trigger: "system_auto_resolve",
+              reason:
+                newStatus === "expired"
+                  ? "No check-in after grace period"
+                  : "Checked-in auto-complete",
+            },
+          });
+        }
       }
     }
   } catch (error) {
-    console.error("Auto-Complete Job Error:", error);
+    console.error("Auto-Resolve Job Error:", error);
   }
 }
 
@@ -101,7 +147,7 @@ async function sendReminders() {
 
     if (bookings24.length > 0 || bookings1.length > 0) {
       console.log(
-        `[Reminders] Sent: ${bookings24.length} (24h), ${bookings1.length} (1h)`
+        `[Reminders] Sent: ${bookings24.length} (24h), ${bookings1.length} (1h)`,
       );
     }
   } catch (error) {
@@ -134,7 +180,7 @@ async function generateDailyReports() {
 
       const totalRevenue = bookings.reduce(
         (sum, b) => sum + (parseFloat(b.Service?.price) || 0),
-        0
+        0,
       );
 
       // Send Email
@@ -148,3 +194,8 @@ async function generateDailyReports() {
     console.error("Cron Job Error:", error);
   }
 }
+
+module.exports = {
+  initCronJobs,
+  resolveStaleBookings,
+};

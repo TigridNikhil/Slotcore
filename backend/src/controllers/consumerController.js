@@ -150,6 +150,24 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
+// Get Profile
+exports.getProfile = async (req, res) => {
+  try {
+    // Ensure we get plain object
+    const consumerData = req.consumer.toJSON
+      ? req.consumer.toJSON()
+      : req.consumer;
+    const { id, email, name, mobile } = consumerData;
+
+    console.log("Fetching profile for:", email, "Mobile:", mobile);
+
+    res.json({ user: { id, email, name, mobile } });
+  } catch (error) {
+    console.error("Get Profile Error:", error);
+    res.status(500).json({ error: "Failed to fetch profile" });
+  }
+};
+
 // Cancel Booking
 exports.cancelBooking = async (req, res) => {
   try {

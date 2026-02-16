@@ -121,6 +121,21 @@ exports.sendBookingConfirmation = async (booking, service, org) => {
         or reply to this email.
       </p>
     </div>
+      
+      <!-- Mobile App Promo -->
+      <div style="text-align:center;padding:20px;background:#eef2ff;border-top:1px solid #e0e7ff;">
+        <p style="margin:0 0 10px;font-size:14px;color:#4338ca;font-weight:600;">Get the full experience on mobile 📱</p>
+        <p style="margin:0 0 15px;font-size:13px;color:#6b7280;">Manage bookings, receive notifications, and more.</p>
+        <div>
+            <a href="#" style="display:inline-block;margin:0 5px;text-decoration:none;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" height="40" alt="Get it on Google Play">
+            </a>
+            <a href="#" style="display:inline-block;margin:0 5px;text-decoration:none;">
+                <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40" alt="Download on the App Store">
+            </a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 `;
@@ -218,6 +233,15 @@ exports.sendBookingCancellation = async (booking, org, reason) => {
              process.env.FRONTEND_URL || "http://localhost:5173"
            }/booking/${booking.id}">View Booking Details</a>
         </p>
+         <p style="font-size: 13px; color: #666; margin-top: 30px;">
+           <a href="${
+             process.env.FRONTEND_URL || "http://localhost:5173"
+           }/booking/${booking.id}">View Booking Details</a>
+        </p>
+
+        <div style="margin-top:25px;padding-top:20px;border-top:1px solid #eee;text-align:center;">
+             <p style="font-size:12px;color:#888;">Download the Slotcore App for easier booking management.</p>
+        </div>
       </div>
     `;
 
@@ -258,6 +282,15 @@ exports.sendBookingReschedule = async (booking, org, newTime) => {
              process.env.FRONTEND_URL || "http://localhost:5173"
            }/booking/${booking.id}">View Booking Details</a>
         </p>
+         <p style="font-size: 13px; color: #666; margin-top: 30px;">
+           <a href="${
+             process.env.FRONTEND_URL || "http://localhost:5173"
+           }/booking/${booking.id}">View Booking Details</a>
+        </p>
+        
+        <div style="margin-top:25px;padding-top:20px;border-top:1px solid #eee;text-align:center;">
+             <p style="font-size:12px;color:#888;">Download the Slotcore App for easier booking management.</p>
+        </div>
       </div>
     `;
 
@@ -344,6 +377,15 @@ exports.sendBookingReminder = async (booking, org, type) => {
              process.env.FRONTEND_URL || "http://localhost:5173"
            }/booking/${booking.id}">View Booking Details</a>
         </p>
+         <p style="font-size: 13px; color: #666; margin-top: 30px;">
+           <a href="${
+             process.env.FRONTEND_URL || "http://localhost:5173"
+           }/booking/${booking.id}">View Booking Details</a>
+        </p>
+
+        <div style="margin-top:25px;padding-top:20px;border-top:1px solid #eee;text-align:center;">
+             <p style="font-size:12px;color:#888;">Track your appointments on the Slotcore Mobile App 📱</p>
+        </div>
       </div>
     `;
 
@@ -455,6 +497,10 @@ exports.sendOtp = async (email, otp) => {
            Slotcore Secure Login
         </p>
       </div>
+      
+       <div style="text-align:center;padding-top:10px;">
+        <p style="font-size:12px;color:#aaa;">Did you know? You can also login via the Mobile App.</p>
+       </div>
     `;
 
     await transporter.sendMail({

@@ -56,6 +56,10 @@ const Booking = sequelize.define(
     notes: {
       type: DataTypes.TEXT,
     },
+    checkedIn: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     cancellationReason: {
       type: DataTypes.TEXT,
     },
@@ -117,7 +121,7 @@ const Booking = sequelize.define(
         }
       },
     },
-  }
+  },
 );
 
 module.exports = Booking;

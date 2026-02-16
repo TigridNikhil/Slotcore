@@ -13,5 +13,6 @@ router.put("/bookings/:id/reschedule", consumerController.rescheduleBooking);
 router.get("/bookings", consumerController.getMyBookings);
 router.get("/stats", consumerController.getConsumerStats);
 router.put("/profile", consumerController.updateProfile);
+router.get("/profile", consumerController.getProfile);
 
 module.exports = router;

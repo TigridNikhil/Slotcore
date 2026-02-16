@@ -518,6 +518,36 @@ exports.createBooking = async (req, res) => {
         { transaction: t },
       );
 
+      // 2.6 Ensure Global Consumer Account Exists (for Mobile App)
+      // This allows the user to later login/signup and see this booking immediately.
+      const { Consumer } = require("../models");
+      let consumer = await Consumer.findOne({
+        where: { email: customerEmail },
+        transaction: t,
+      });
+
+      if (!consumer) {
+        // Create shadow consumer
+        consumer = await Consumer.create(
+          {
+            email: customerEmail,
+            name: customerName,
+            mobile: req.body.customerMobile || null,
+            // isVerified: false // Default
+          },
+          { transaction: t },
+        );
+        console.log(
+          `[CreateBooking] Created shadow Consumer for ${customerEmail}`,
+        );
+      } else {
+        // Optional: Update mobile if missing?
+        if (!consumer.mobile && req.body.customerMobile) {
+          consumer.mobile = req.body.customerMobile;
+          await consumer.save({ transaction: t });
+        }
+      }
+
       // --- PAYMENT STATUS LOGIC ---
       let bookingStatus = "confirmed";
       let paymentStatus = "unpaid";

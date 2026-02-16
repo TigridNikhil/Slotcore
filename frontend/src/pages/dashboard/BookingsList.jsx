@@ -273,6 +273,18 @@ export default function BookingsList() {
             <FaUserSlash /> No Show
           </span>
         );
+      case "checked_in":
+        return (
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+            <FaCheckCircle /> Checked In
+          </span>
+        );
+      case "expired":
+        return (
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+            <FaTimesCircle /> Expired
+          </span>
+        );
       default:
         return (
           <span className="px-3 py-1 rounded-full text-xs font-gray bg-gray-100 text-gray-700">

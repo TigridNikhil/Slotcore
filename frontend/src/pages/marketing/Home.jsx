@@ -11,6 +11,8 @@ import {
   FaRocket,
   FaStar,
   FaArrowRight,
+  FaPlaystation,
+  FaApple,
 } from "react-icons/fa";
 import { SiTrustpilot } from "react-icons/si";
 
@@ -189,6 +191,101 @@ export default function Home() {
               label="Customer Rating"
               icon={<SiTrustpilot className="text-orange-500" />}
             />
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile App Promo Section */}
+      <section className="py-24 bg-neutral-900 relative overflow-hidden">
+        {/* Background Effects */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary-900/30 to-transparent pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary-600/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            {/* Left Content */}
+            <div className="lg:w-1/2 text-left">
+              <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-primary-300 text-sm font-semibold backdrop-blur-sm">
+                <span>📱 Mobile App Available</span>
+              </div>
+
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white leading-tight">
+                Manage your business <br />
+                <span className="text-primary-400">anywhere, anytime.</span>
+              </h2>
+
+              <p className="text-lg text-neutral-400 mb-10 max-w-xl leading-relaxed">
+                Stay connected to your appointments and customers on the go. Get
+                real-time notifications, manage bookings, and view analytics
+                right from your pocket.
+              </p>
+
+              <div className="flex flex-wrap gap-4">
+                <button className="bg-white text-neutral-900 px-6 py-3 rounded-xl font-bold hover:bg-neutral-100 transition-colors flex items-center gap-3">
+                  <span className="text-2xl"><FaApple/></span>
+                  <div className="text-left">
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-neutral-500">
+                      Download on the
+                    </div>
+                    <div className="text-sm leading-none">App Store</div>
+                  </div>
+                </button>
+
+                <button className="bg-transparent border border-neutral-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/5 transition-colors flex items-center gap-3">
+                  <span className="text-2xl">
+                    <FaPlaystation/>
+                  </span>
+                  <div className="text-left">
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-neutral-400">
+                      Get it on
+                    </div>
+                    <div className="text-sm leading-none">Google Play</div>
+                  </div>
+                </button>
+              </div>
+
+              <div className="mt-8 flex items-center gap-4 text-sm text-neutral-500">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded-full border-2 border-neutral-900 bg-neutral-800 flex items-center justify-center text-xs text-white"
+                    >
+                      {String.fromCharCode(64 + i)}
+                    </div>
+                  ))}
+                </div>
+                <p>Join 10,000+ businesses on mobile</p>
+              </div>
+            </div>
+
+            {/* Right Image */}
+            <div className="lg:w-1/2 relative lg:h-[600px] flex items-center justify-center">
+              {/* Floating Elements */}
+              <div className="absolute top-1/4 right-10 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 shadow-2xl animate-float-slow z-20 hidden md:block">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                    ✓
+                  </div>
+                  <div>
+                    <div className="text-white font-bold text-sm">
+                      New Booking
+                    </div>
+                    <div className="text-neutral-300 text-xs text-nowrap">
+                      Just now • Sarah J.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative z-10 transform rotate-[-5deg] hover:rotate-0 transition-transform duration-500">
+                <img
+                  src="/mobile-app-mockup.png"
+                  alt="Slotcore Mobile App"
+                  className="max-w-[300px] md:max-w-[350px] drop-shadow-2xl"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
