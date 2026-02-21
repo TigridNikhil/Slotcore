@@ -18,7 +18,7 @@ import CustomerProfile from "./CustomerProfile";
 export default function CustomersList() {
   const dispatch = useDispatch();
   const { customers, total, page, totalPages, loading } = useSelector(
-    (state) => state.customer
+    (state) => state.customer,
   );
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -147,7 +147,7 @@ export default function CustomersList() {
                           <span className="text-[10px] text-gray-400">
                             Last:{" "}
                             {new Date(
-                              customer.lastBookingDate
+                              customer.lastBookingDate,
                             ).toLocaleDateString()}
                           </span>
                         )}
@@ -198,9 +198,6 @@ export default function CustomersList() {
           customer={selectedCustomer}
           onClose={() => setSelectedCustomer(null)}
           onUpdate={(updatedData) => {
-            // Optimistic local update or re-fetch?
-            // Let's re-fetch details or dispatch update
-            // For now just re-fetch list is simpler for "lite"
             dispatch(updateCustomer(selectedCustomer.id, updatedData));
             setSelectedCustomer({ ...selectedCustomer, ...updatedData }); // Local update
           }}

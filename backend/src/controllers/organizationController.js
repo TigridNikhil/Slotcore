@@ -1,5 +1,13 @@
-const { Organization, Booking, Service, sequelize } = require("../models");
+const {
+  Organization,
+  Booking,
+  Service,
+  sequelize,
+  Customer,
+  User,
+} = require("../models");
 const { Op } = require("sequelize");
+const XLSX = require("xlsx");
 
 exports.getPublicInfo = async (req, res) => {
   try {
@@ -323,7 +331,8 @@ exports.getOverview = async (req, res) => {
 
     const dailyStats = chartsData.map((d) => ({
       label: d.name,
-      count: d.bookings,
+      bookings: d.bookings,
+      revenue: d.revenue,
     }));
 
     res.successResponse({
@@ -422,5 +431,147 @@ exports.upgradePlan = async (req, res) => {
   } catch (error) {
     console.error("Upgrade Plan Error:", error);
     res.serverError(error.message, "Failed to upgrade plan");
+  }
+};
+
+exports.generateReport = async (req, res) => {
+  try {
+    const orgId = req.orgId;
+    const { startDate, endDate } = req.query;
+
+    let start = startDate ? new Date(startDate) : new Date();
+    let end = endDate ? new Date(endDate) : new Date();
+
+    if (!startDate) {
+      start.setDate(start.getDate() - 30);
+    }
+    end.setHours(23, 59, 59, 999);
+    start.setHours(0, 0, 0, 0);
+
+    const organization = await Organization.findByPk(orgId);
+    if (!organization) {
+      return res.notFound("Organization not found");
+    }
+
+    // 1. Fetch Summary Data
+    const totalBookings = await Booking.count({
+      where: { orgId, startTime: { [Op.between]: [start, end] } },
+    });
+
+    const activeServicesCount = await Service.count({
+      where: { orgId, isActive: true },
+    });
+
+    const confirmedBookings = await Booking.findAll({
+      where: {
+        orgId,
+        startTime: { [Op.between]: [start, end] },
+        status: { [Op.or]: ["confirmed", "completed"] },
+      },
+      include: [{ model: Service, attributes: ["price"] }],
+    });
+
+    const totalRevenue = confirmedBookings.reduce(
+      (sum, b) => sum + (Number(b.Service?.price) || 0),
+      0,
+    );
+
+    // 2. Service Performance
+    const bookingsWithService = await Booking.findAll({
+      where: { orgId, startTime: { [Op.between]: [start, end] } },
+      include: [{ model: Service, attributes: ["name", "price"] }],
+    });
+
+    const serviceStats = {};
+    bookingsWithService.forEach((booking) => {
+      const name = booking.Service?.name || "Unknown";
+      if (!serviceStats[name]) {
+        serviceStats[name] = { Service: name, Bookings: 0, Revenue: 0 };
+      }
+      serviceStats[name].Bookings += 1;
+      if (booking.status === "confirmed" || booking.status === "completed") {
+        serviceStats[name].Revenue += Number(booking.Service?.price) || 0;
+      }
+    });
+
+    // 3. Status Distribution
+    const statusCounts = await Booking.findAll({
+      where: { orgId, startTime: { [Op.between]: [start, end] } },
+      attributes: [
+        "status",
+        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+      ],
+      group: ["status"],
+    });
+
+    // 4. Detailed Bookings
+    const detailedBookings = await Booking.findAll({
+      where: { orgId, startTime: { [Op.between]: [start, end] } },
+      include: [
+        { model: Service, attributes: ["name", "price"] },
+        { model: Customer, as: "customer", attributes: ["name", "email"] },
+        { model: User, as: "staff", attributes: ["name"] },
+      ],
+      order: [["startTime", "DESC"]],
+    });
+
+    const bookingRows = detailedBookings.map((b) => ({
+      "Start Time": b.startTime.toLocaleString(),
+      Customer: b.customer?.name || "N/A",
+      Email: b.customer?.email || "N/A",
+      Service: b.Service?.name || "N/A",
+      Staff: b.staff?.name || "N/A",
+      Status: b.status.toUpperCase(),
+      Amount: b.Service?.price || 0,
+    }));
+
+    // Create Excel
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Summary info
+    const summaryData = [
+      { Metric: "Organization", Value: organization.name },
+      {
+        Metric: "Report period",
+        Value: `${start.toDateString()} to ${end.toDateString()}`,
+      },
+      {},
+      { Metric: "Total Bookings", Value: totalBookings },
+      { Metric: "Active Services", Value: activeServicesCount },
+      { Metric: "Total Revenue", Value: totalRevenue },
+    ];
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+    // Sheet 2: Service performance
+    const wsService = XLSX.utils.json_to_sheet(Object.values(serviceStats));
+    XLSX.utils.book_append_sheet(wb, wsService, "Service Performance");
+
+    // Sheet 3: Status Distribution
+    const statusData = statusCounts.map((s) => ({
+      Status: s.status.toUpperCase(),
+      Count: Number(s.get("count")),
+    }));
+    const wsStatus = XLSX.utils.json_to_sheet(statusData);
+    XLSX.utils.book_append_sheet(wb, wsStatus, "Status Distribution");
+
+    // Sheet 4: Detailed Bookings
+    const wsBookings = XLSX.utils.json_to_sheet(bookingRows);
+    XLSX.utils.book_append_sheet(wb, wsBookings, "Booking Details");
+
+    const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="Business_Report_${organization.slug}.xlsx"`,
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.send(buffer);
+  } catch (error) {
+    console.error("Generate Report Error:", error);
+    res.serverError(error.message, "Failed to generate report");
   }
 };

@@ -17,6 +17,7 @@ router.get("/public", publicApiLimiter, organizationController.getPublicInfo);
 router.get("/overview", auth, organizationController.getOverview);
 router.get("/stats", auth, organizationController.getStats);
 router.get("/settings", auth, organizationController.getSettings);
+router.get("/report", auth, organizationController.generateReport);
 
 // PUT /api/organization
 // Protected (Admin only)

@@ -23,13 +23,17 @@ import {
 import {
   getDashboardStats,
   getOverviewStats,
+  downloadReport,
 } from "../../operations/dashboard/dashboardAction";
 import { axiosInstance } from "../../utils/baseurl";
 import { applyTheme } from "../../utils/themeUtils";
 import { useDispatch, useSelector } from "react-redux";
+import { useState } from "react";
 
 const OrgHome = () => {
   const { stats, loading, overview } = useSelector((state) => state.dashboard);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [chartTab, setChartTab] = useState("bookings"); // 'bookings' or 'revenue'
   const dispatch = useDispatch();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -49,6 +53,12 @@ const OrgHome = () => {
     };
     fetchTheme();
   }, [dispatch]);
+
+  const handleGenerateReport = async () => {
+    setReportLoading(true);
+    await dispatch(downloadReport());
+    setReportLoading(false);
+  };
 
   const StatCard = ({ title, value, icon, change, isPositive }) => (
     <motion.div
@@ -124,8 +134,19 @@ const OrgHome = () => {
           </div>
 
           <div className="flex gap-4">
-            <button className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-primary-900/30 flex items-center gap-2 active:scale-95">
-              Generate Report
+            <button
+              onClick={handleGenerateReport}
+              disabled={reportLoading}
+              className={`${reportLoading ? "bg-primary-400 cursor-not-allowed" : "bg-primary-600 hover:bg-primary-700"} text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-primary-900/30 flex items-center gap-2 active:scale-95`}
+            >
+              {reportLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
+                  Generating...
+                </>
+              ) : (
+                "Generate Report"
+              )}
             </button>
           </div>
         </div>
@@ -147,7 +168,7 @@ const OrgHome = () => {
         />
         <StatCard
           title="Total Revenue"
-          value={`$${overview.revenue?.toLocaleString() || "0"}`}
+          value={`Rs. ${overview.revenue?.toLocaleString() || "0"}`}
           icon={<FaDollarSign size={24} />}
           change="8"
           isPositive={true}
@@ -296,7 +317,7 @@ const OrgHome = () => {
                     tick={{ fill: "#94a3b8", fontSize: 12, fontWeight: 600 }}
                   />
                   <Tooltip
-                    formatter={(value) => [`$${value}`, "Revenue"]}
+                    formatter={(value) => [`Rs. ${value}`, "Revenue"]}
                     contentStyle={{
                       borderRadius: "16px",
                       border: "none",
@@ -338,10 +359,16 @@ const OrgHome = () => {
             </p>
           </div>
           <div className="bg-gray-50 p-2 rounded-2xl flex gap-2">
-            <button className="px-4 py-2 bg-white rounded-xl text-primary-600 font-bold shadow-sm">
+            <button
+              onClick={() => setChartTab("bookings")}
+              className={`px-4 py-2 rounded-xl font-bold transition-all ${chartTab === "bookings" ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:bg-gray-100"}`}
+            >
               Bookings
             </button>
-            <button className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-xl transition-all">
+            <button
+              onClick={() => setChartTab("revenue")}
+              className={`px-4 py-2 rounded-xl font-bold transition-all ${chartTab === "revenue" ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:bg-gray-100"}`}
+            >
               Revenue
             </button>
           </div>
@@ -374,6 +401,10 @@ const OrgHome = () => {
                 />
                 <Tooltip
                   cursor={{ fill: "#f8fafc", radius: 10 }}
+                  formatter={(value) => [
+                    chartTab === "revenue" ? `Rs. ${value}` : value,
+                    chartTab === "revenue" ? "Revenue" : "Bookings",
+                  ]}
                   contentStyle={{
                     borderRadius: "16px",
                     border: "none",
@@ -382,9 +413,11 @@ const OrgHome = () => {
                   }}
                 />
                 <Bar
-                  dataKey="count"
-                  name="Bookings"
-                  fill="var(--org-primary)"
+                  dataKey={chartTab === "bookings" ? "bookings" : "revenue"}
+                  name={chartTab === "bookings" ? "Bookings" : "Revenue"}
+                  fill={
+                    chartTab === "bookings" ? "var(--org-primary)" : "#10B981"
+                  }
                   radius={[8, 8, 0, 0]}
                   barSize={20}
                   animationDuration={3000}

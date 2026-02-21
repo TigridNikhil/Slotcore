@@ -7,6 +7,7 @@ import {
   FaTag,
   FaStickyNote,
 } from "react-icons/fa";
+import { axiosInstance } from "../../../utils/baseurl";
 
 export default function CustomerProfile({ customer, onClose, onUpdate }) {
   const [formData, setFormData] = useState({
@@ -17,44 +18,22 @@ export default function CustomerProfile({ customer, onClose, onUpdate }) {
     tags: customer.tags ? customer.tags.join(", ") : "",
   });
 
-  // Calculate local stats from history if needed, or use passed
-  // The customer object passed might be from list (no history yet)
-  // We'd ideally fetch full details including history here if not present.
-  // But for speed, let's assume we can fetch or display what we have.
-  // Actually, listCustomers doesn't return history. We need to fetch details.
-  // But to keep it simple component-wise:
-  // I'll add a fetch capability inside this modal or assume parent handles it.
-  // Let's fetch details here if history is missing.
-
   const [details, setDetails] = useState(customer);
   const [loadingHistory, setLoadingHistory] = useState(false);
-
-  // We need to import axiosInstance to fetch specific details if not provided
-  // Or simpler: dispatch fetchCustomerDetails and use selector?
-  // Let's just use axios for this specific read to avoid redux complexity collision with list
-  // Actually, redux is better. But I'll use a local fetch for "lite" history loading.
 
   useEffect(() => {
     // If history missing, fetch it
     if (!customer.bookings) {
       setLoadingHistory(true);
-      // Direct fetch or action? Let's use the fetchCustomerDetails action pattern
-      // but here I don't want to replace the *list* in redux.
-      // So I'll do a quick fetch.
-      // Assuming axiosInstance is available via import
-      import("../../../utils/baseurl").then(({ axiosInstance }) => {
-        axiosInstance
-          .get(`/customers/${customer.id}`)
-          .then((res) => {
-            setDetails(res.data);
-            setFormData((prev) => ({
-              ...prev,
-              notes: res.data.notes || "",
-              tags: res.data.tags ? res.data.tags.join(", ") : "",
-            }));
-            setLoadingHistory(false);
-          })
-          .catch((err) => setLoadingHistory(false));
+      axiosInstance.get(`/customers/${customer.id}`).then((res) => {
+        const customerData = res.data.data || res.data; // Flexible for different response shapes if needed
+        setDetails(customerData);
+        setFormData((prev) => ({
+          ...prev,
+          notes: customerData.notes || "",
+          tags: customerData.tags ? customerData.tags.join(", ") : "",
+        }));
+        setLoadingHistory(false);
       });
     }
   }, [customer.id]);
@@ -74,10 +53,6 @@ export default function CustomerProfile({ customer, onClose, onUpdate }) {
       ...formData,
       tags: tagsArray,
     });
-    // Close handled by parent if success, or keep open? Keep open to show success?
-    // Parent logic closes it? No, parent just updates list.
-    // Let's show a "Saved" feedback maybe?
-    // efficient: onClose();
   };
 
   return (
@@ -99,11 +74,16 @@ export default function CustomerProfile({ customer, onClose, onUpdate }) {
 
           <div className="text-center mb-6">
             <div className="w-20 h-20 mx-auto bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-2xl mb-3">
-              {details.name.charAt(0).toUpperCase()}
+              {details?.name?.charAt(0).toUpperCase() || "U"}
             </div>
-            <h2 className="text-xl font-bold text-gray-900">{details.name}</h2>
+            <h2 className="text-xl font-bold text-gray-900">
+              {details?.name || "Unknown Customer"}
+            </h2>
             <p className="text-sm text-gray-500">
-              Customer since {new Date(details.createdAt).getFullYear()}
+              Customer since{" "}
+              {details?.createdAt
+                ? new Date(details.createdAt).getFullYear()
+                : "N/A"}
             </p>
           </div>
 
@@ -222,8 +202,8 @@ export default function CustomerProfile({ customer, onClose, onUpdate }) {
                             booking.status === "confirmed"
                               ? "bg-green-100 text-green-700"
                               : booking.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-600"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-600"
                           }`}
                         >
                           {booking.status}
