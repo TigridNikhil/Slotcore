@@ -26,6 +26,27 @@ import MainLayout from "./layouts/MainLayout";
 import ManageBooking from "./pages/public/ManageBooking";
 import MarketplaceHome from "./pages/marketplace/MarketplaceHome";
 import ReviewSubmission from "./pages/public/ReviewSubmission";
+import Onboarding from "./pages/onboarding/Onboarding";
+
+// Dashboard Sub-components
+import OrgHome from "./pages/dashboard/OrgHome";
+import Analytics from "./pages/dashboard/Analytics";
+import CalendarView from "./pages/dashboard/CalendarView";
+import CustomersList from "./pages/dashboard/crm/CustomersList";
+import LocationManagement from "./pages/dashboard/locations/LocationManagement";
+import Integrations from "./pages/dashboard/Integrations";
+import TeamManagement from "./pages/dashboard/team/TeamManagement";
+import ServicesManagement from "./pages/dashboard/ServicesManagement";
+import BookingsList from "./pages/dashboard/BookingsList";
+import AvailabilitySettings from "./pages/dashboard/availability/AvailabilitySettings";
+import Reviews from "./pages/dashboard/Reviews";
+import ResourcesList from "./pages/dashboard/resources/ResourcesList";
+import AIContentGenerator from "./pages/dashboard/AIContentGenerator";
+import AppearanceSettings from "./pages/dashboard/AppearanceSettings";
+import NotificationSettings from "./pages/dashboard/NotificationSettings";
+import Payments from "./pages/dashboard/Payments";
+import ScanBooking from "./pages/dashboard/ScanBooking";
+import OrganizationDetail from "./pages/dashboard/OrganizationDetail";
 
 function App() {
   // Simple subdomain detection
@@ -79,6 +100,7 @@ function App() {
           <Route path="/register" element={<RegisterOrg />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/onboarding" element={<Onboarding />} />
 
           {/* Public Booking */}
           <Route path="/book" element={<BookingPage />} />
@@ -87,7 +109,26 @@ function App() {
           <Route path="/review/:bookingId" element={<ReviewSubmission />} />
 
           {/* Protected Dashboard */}
-          <Route path="/dashboard/*" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<OrgHome />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="calendar" element={<CalendarView />} />
+            <Route path="customers" element={<CustomersList />} />
+            <Route path="locations" element={<LocationManagement />} />
+            <Route path="integrations" element={<Integrations />} />
+            <Route path="team" element={<TeamManagement />} />
+            <Route path="services" element={<ServicesManagement />} />
+            <Route path="bookings" element={<BookingsList />} />
+            <Route path="availability" element={<AvailabilitySettings />} />
+            <Route path="reviews" element={<Reviews />} />
+            <Route path="resources" element={<ResourcesList />} />
+            <Route path="ai-studio" element={<AIContentGenerator />} />
+            <Route path="appearance" element={<AppearanceSettings />} />
+            <Route path="notifications" element={<NotificationSettings />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="scan" element={<ScanBooking />} />
+            <Route path="organization" element={<OrganizationDetail />} />
+          </Route>
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

@@ -2,14 +2,23 @@ const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/paymentController");
 const authMiddleware = require("../middlewares/auth"); // Optional? Usually public or auth required
+const { checkFeatureEnabled } = require("../middlewares/restrictionMiddleware");
 
-router.post("/order", paymentController.createOrder); // Public/Guest allow
+router.post(
+  "/order",
+  checkFeatureEnabled("onlinePayments"),
+  paymentController.createOrder,
+); // Public/Guest allow
 
 // Get Org Payments (Org Admin)
 router.get("/payments", authMiddleware, paymentController.getOrgPayments);
 
 // Verify Payment
-router.post("/verify", paymentController.verifyPayment);
+router.post(
+  "/verify",
+  checkFeatureEnabled("onlinePayments"),
+  paymentController.verifyPayment,
+);
 
 // Mark Settlement (Admin only)
 router.post("/payout/:id", authMiddleware, paymentController.markSettled);
@@ -24,14 +33,14 @@ router.get("/export/csv", authMiddleware, paymentController.exportLedger);
 router.post(
   "/remind/:id",
   authMiddleware,
-  paymentController.sendSettlementReminder
+  paymentController.sendSettlementReminder,
 );
 
 // Send Total Outstanding Reminder (Admin only)
 router.post(
   "/remind-total/:orgId",
   authMiddleware,
-  paymentController.sendTotalSettlementReminder
+  paymentController.sendTotalSettlementReminder,
 );
 
 // Download Invoice
@@ -39,14 +48,14 @@ router.post(
 router.get(
   "/export/pdf/:orgId",
   authMiddleware,
-  paymentController.exportLedgerPdf
+  paymentController.exportLedgerPdf,
 );
 
 // Download Invoice
 router.get(
   "/invoice/:orgId",
   authMiddleware,
-  paymentController.generateMonthlyInvoice
+  paymentController.generateMonthlyInvoice,
 );
 
 module.exports = router;

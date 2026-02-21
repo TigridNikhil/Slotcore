@@ -153,7 +153,12 @@ exports.login = async (req, res) => {
     // 2. Find User in Org
     const user = await User.findOne({
       where: { email, orgId },
-      include: [{ model: Organization, attributes: ["slug", "name"] }],
+      include: [
+        {
+          model: Organization,
+          attributes: ["slug", "name", "onboardingCompleted"],
+        },
+      ],
     });
     if (!user) {
       return res.badRequest("Invalid credentials");
@@ -194,6 +199,7 @@ exports.login = async (req, res) => {
           role: user.role,
           orgId: user.orgId,
           slug: user.Organization?.slug, // Return slug
+          onboardingCompleted: user.Organization?.onboardingCompleted,
           orgName: user.Organization?.name,
         },
       },

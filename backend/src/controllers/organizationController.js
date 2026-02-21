@@ -344,7 +344,7 @@ exports.getOverview = async (req, res) => {
 exports.updateOrganization = async (req, res) => {
   try {
     const orgId = req.orgId; // From auth middleware, not body!
-    const { name, primaryColor, content } = req.body;
+    const { name, primaryColor, content, plan, billingCycle } = req.body;
 
     const organization = await Organization.findByPk(orgId);
     if (!organization) {
@@ -361,6 +361,10 @@ exports.updateOrganization = async (req, res) => {
     if (req.body.contactPhone)
       organization.contactPhone = req.body.contactPhone;
     if (req.body.address) organization.address = req.body.address;
+    if (plan) organization.plan = plan;
+    if (billingCycle) organization.billingCycle = billingCycle;
+    if (req.body.onboardingCompleted !== undefined)
+      organization.onboardingCompleted = req.body.onboardingCompleted;
 
     // Merge settings if provided
     if (req.body.settings) {
@@ -395,9 +399,28 @@ exports.getSettings = async (req, res) => {
       contactEmail: organization.contactEmail,
       contactPhone: organization.contactPhone,
       address: organization.address,
+      plan: organization.plan,
+      billingCycle: organization.billingCycle,
+      subscriptionStatus: organization.subscriptionStatus,
+      onboardingCompleted: organization.onboardingCompleted,
     });
   } catch (error) {
     console.error("Get Settings Error:", error);
     res.serverError(error.message, "Failed to fetch settings");
+  }
+};
+
+exports.upgradePlan = async (req, res) => {
+  try {
+    const orgId = req.orgId;
+    const { plan } = req.body;
+    const organization = await Organization.findByPk(orgId);
+    if (!organization) return res.notFound("Org not found");
+    organization.plan = plan;
+    await organization.save();
+    res.successResponse({ organization }, "Plan upgraded successfully");
+  } catch (error) {
+    console.error("Upgrade Plan Error:", error);
+    res.serverError(error.message, "Failed to upgrade plan");
   }
 };

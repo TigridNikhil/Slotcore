@@ -4,6 +4,7 @@ const scheduleController = require("../controllers/scheduleController");
 const availabilityController = require("../controllers/availabilityController");
 const organizationController = require("../controllers/organizationController");
 const { publicApiLimiter } = require("../middlewares/rateLimiter");
+const { checkPlanLimit } = require("../middlewares/restrictionMiddleware");
 
 const auth = require("../middlewares/auth");
 
@@ -20,6 +21,7 @@ router.get("/settings", auth, organizationController.getSettings);
 // PUT /api/organization
 // Protected (Admin only)
 router.put("/", auth, organizationController.updateOrganization);
+router.post("/upgrade", auth, organizationController.upgradePlan);
 
 // Schedules
 router.get("/schedules", auth, scheduleController.getSchedules);
@@ -38,25 +40,26 @@ router.get(
   "/team",
   auth,
   authorize(["org_admin"]),
-  teamController.getTeamMembers
+  teamController.getTeamMembers,
 );
 router.post(
   "/team",
   auth,
   authorize(["org_admin"]),
-  teamController.addTeamMember
+  checkPlanLimit("users"),
+  teamController.addTeamMember,
 );
 router.put(
   "/team/:userId",
   auth,
   authorize(["org_admin"]),
-  teamController.updateTeamMember
+  teamController.updateTeamMember,
 );
 router.delete(
   "/team/:userId",
   auth,
   authorize(["org_admin"]),
-  teamController.removeTeamMember
+  teamController.removeTeamMember,
 );
 
 // Staff Schedules
@@ -65,13 +68,13 @@ router.get(
   "/team/:userId/schedule",
   auth,
   authorize(["org_admin", "staff"]),
-  staffScheduleController.getStaffSchedule
+  staffScheduleController.getStaffSchedule,
 );
 router.put(
   "/team/:userId/schedule",
   auth,
   authorize(["org_admin"]),
-  staffScheduleController.updateStaffSchedule
+  staffScheduleController.updateStaffSchedule,
 );
 
 // Reviews
@@ -80,7 +83,7 @@ router.get(
   "/reviews",
   auth,
   authorize(["org_admin", "staff"]),
-  reviewController.getVendorReviews
+  reviewController.getVendorReviews,
 );
 
 module.exports = router;

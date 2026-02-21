@@ -114,7 +114,7 @@ const Organization = sequelize.define(
         "Government Services",
         "Home & Field Services",
         "Corporate & Enterprise",
-        "Other"
+        "Other",
       ),
       defaultValue: "Other",
     },
@@ -141,10 +141,14 @@ const Organization = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+    onboardingCompleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
   {
     indexes: [{ unique: true, fields: ["slug"] }],
-  }
+  },
 );
 
 module.exports = Organization;

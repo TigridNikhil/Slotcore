@@ -1,29 +1,9 @@
 import { useEffect, useState } from "react";
-import Reviews from "./Reviews";
-import {
-  Link,
-  Routes,
-  Route,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { axiosInstance } from "../../utils/baseurl";
+import { applyTheme } from "../../utils/themeUtils";
+import { useNavigate, useLocation, Outlet, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { AnimatePresence, motion } from "framer-motion";
-import ServicesManagement from "./ServicesManagement";
-import BookingsList from "./BookingsList";
-import AIContentGenerator from "./AIContentGenerator";
-import AppearanceSettings from "./AppearanceSettings";
-import CalendarView from "./CalendarView";
-import Analytics from "./Analytics";
-import CustomersList from "./crm/CustomersList";
-import Integrations from "./Integrations";
-import AvailabilitySettings from "./availability/AvailabilitySettings";
-import LocationManagement from "./locations/LocationManagement";
-import ResourcesList from "./resources/ResourcesList";
-import Payments from "./Payments";
-import ScanBooking from "./ScanBooking";
-
-import NotificationSettings from "./NotificationSettings";
 
 import {
   FaCalendarAlt,
@@ -47,19 +27,6 @@ import {
   getDashboardStats,
   getOverviewStats,
 } from "../../operations/dashboard/dashboardAction";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
-import TeamManagement from "./team/TeamManagement";
 import { FaStar } from "react-icons/fa6";
 
 export default function Dashboard() {
@@ -74,6 +41,19 @@ export default function Dashboard() {
   useEffect(() => {
     dispatch(getDashboardStats());
     dispatch(getOverviewStats()); // Fetch all-time stats
+
+    // Fetch organization theme settings
+    const fetchTheme = async () => {
+      try {
+        const res = await axiosInstance.get("/organization/settings");
+        if (res.data.data?.primaryColor) {
+          applyTheme(res.data.data.primaryColor);
+        }
+      } catch (err) {
+        console.error("Failed to fetch theme settings", err);
+      }
+    };
+    fetchTheme();
   }, [dispatch]);
 
   const handleLogout = () => {
@@ -194,6 +174,12 @@ export default function Dashboard() {
       icon: <FaConciergeBell />,
       roles: ["admin", "org_admin"],
     },
+    // {
+    //   label: "Organization",
+    //   path: "/dashboard/organization",
+    //   icon: <FaBuilding />,
+    //   roles: ["admin", "org_admin"],
+    // },
   ];
 
   // Filter items visible to this user
@@ -206,7 +192,7 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex overflow-hidden">
+    <div className="min-h-screen flex overflow-hidden">
       {/* Sidebar */}
       {/* Mobile Overlay */}
       {sidebarOpen && (
@@ -218,22 +204,25 @@ export default function Dashboard() {
 
       {/* Sidebar */}
       <motion.aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-900 text-white 
+        className={`fixed bg-white inset-y-0 left-0 z-30 w-64 text-black 
   flex flex-col shadow-xl transition-transform duration-300 ease-in-out
   ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-800 flex justify-between items-center shrink-0">
+        <div className="p-6 flex justify-between items-center shrink-0">
           <div>
-            <h1 className="flex items-center gap-3 text-2xl font-bold tracking-wider text-indigo-400">
+            <h1 className="flex items-center gap-3 text-2xl font-bold tracking-wider">
               <img src="/logo.png" alt="Slotcore" className="h-8" />
               Slotcore
             </h1>
-            <div className="mt-1 pl-11">
+            <div
+              className="mt-1 pl-11"
+              onClick={() => navigate("/dashboard/organization")}
+            >
               {user.orgName && (
-                <p className="text-white font-medium text-sm">{user.orgName}</p>
+                <p className="text-black font-medium text-sm">{user.orgName}</p>
               )}
-              <p className="text-xs text-gray-400">Tenant Dashboard</p>
+              {/* <p className="text-xs text-gray-400">Tenant Dashboard</p> */}
             </div>
           </div>
           <button
@@ -257,8 +246,8 @@ export default function Dashboard() {
                 <div
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                     isActive
-                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/50"
-                      : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                      ? "bg-primary-600 text-white shadow-lg shadow-primary-900/50"
+                      : "text-gray-800 hover:bg-gray-300 hover:text-black"
                   }`}
                 >
                   {item.icon}
@@ -270,9 +259,9 @@ export default function Dashboard() {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-800 shrink-0">
+        <div className="p-4 shadow-lg shadow-gray-200 shrink-0">
           <div className="mb-4 px-4">
-            <p className="text-sm font-semibold text-white">{user.name}</p>
+            <p className="text-sm font-semibold text-black">{user.name}</p>
             <p className="text-xs text-gray-500 truncate">{user.email}</p>
           </div>
           <button
@@ -300,445 +289,15 @@ export default function Dashboard() {
           <div className="w-8"></div> {/* Spacer for alignment */}
         </div>
         <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route
-              path="/"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 className="text-2xl font-bold mb-4">
-                    Welcome back, {user.name}!
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <motion.div
-                      whileHover={{ y: -5 }}
-                      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-                    >
-                      <h3 className="text-gray-500 text-sm font-medium uppercase">
-                        Total Bookings
-                      </h3>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {loading ? "..." : overview.totalBookings}
-                      </p>
-                      {/* <div className="mt-4 text-green-600 text-sm font-medium">↑ 12% from last week</div> */}
-                    </motion.div>
-                    <motion.div
-                      whileHover={{ y: -5 }}
-                      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-                    >
-                      <h3 className="text-gray-500 text-sm font-medium uppercase">
-                        Active Services
-                      </h3>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {loading ? "..." : overview.activeServices}
-                      </p>
-                    </motion.div>
-                    <motion.div
-                      whileHover={{ y: -5 }}
-                      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-                    >
-                      <h3 className="text-gray-500 text-sm font-medium uppercase">
-                        Revenue
-                      </h3>
-                      <p className="text-3xl font-bold text-gray-900 mt-2">
-                        {loading ? "..." : `${overview.revenue}`}
-                      </p>
-                      {/* <div className="mt-4 text-green-600 text-sm font-medium">↑ 5% from last month</div> */}
-                    </motion.div>
-                  </div>
-
-                  {/* Charts Section */}
-                  <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-                    >
-                      <h3 className="text-lg font-bold text-gray-800 mb-6">
-                        Booking Trends
-                      </h3>
-                      <div className="h-64">
-                        {loading ? (
-                          <div className="h-full flex items-center justify-center text-gray-400">
-                            Loading chart...
-                          </div>
-                        ) : (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={overview.chartsData || []}
-                              margin={{
-                                top: 10,
-                                right: 30,
-                                left: 0,
-                                bottom: 0,
-                              }}
-                            >
-                              <defs>
-                                <linearGradient
-                                  id="colorBookings"
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="5%"
-                                    stopColor="#4F46E5"
-                                    stopOpacity={0.8}
-                                  />
-                                  <stop
-                                    offset="95%"
-                                    stopColor="#4F46E5"
-                                    stopOpacity={0}
-                                  />
-                                </linearGradient>
-                              </defs>
-                              <XAxis dataKey="name" />
-                              <YAxis />
-                              <Tooltip />
-                              <CartesianGrid
-                                strokeDasharray="3 3"
-                                vertical={false}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="bookings"
-                                stroke="#4F46E5"
-                                fillOpacity={1}
-                                fill="url(#colorBookings)"
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        )}
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
-                    >
-                      <h3 className="text-lg font-bold text-gray-800 mb-6">
-                        Revenue Overview
-                      </h3>
-                      <div className="h-64">
-                        {loading ? (
-                          <div className="h-full flex items-center justify-center text-gray-400">
-                            Loading chart...
-                          </div>
-                        ) : (
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                              data={overview.chartsData || []}
-                              margin={{
-                                top: 10,
-                                right: 30,
-                                left: 0,
-                                bottom: 0,
-                              }}
-                            >
-                              <defs>
-                                <linearGradient
-                                  id="colorRevenue"
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="5%"
-                                    stopColor="#10B981"
-                                    stopOpacity={0.8}
-                                  />
-                                  <stop
-                                    offset="95%"
-                                    stopColor="#10B981"
-                                    stopOpacity={0}
-                                  />
-                                </linearGradient>
-                              </defs>
-                              <XAxis dataKey="name" />
-                              <YAxis />
-                              <Tooltip
-                                formatter={(value) => [`$${value}`, "Revenue"]}
-                              />
-                              <CartesianGrid
-                                strokeDasharray="3 3"
-                                vertical={false}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="revenue"
-                                stroke="#10B981"
-                                fillOpacity={1}
-                                fill="url(#colorRevenue)"
-                              />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        )}
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  {/* Daily Activity Chart */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6"
-                  >
-                    <h3 className="text-lg font-bold text-gray-800 mb-6">
-                      Daily Activity (Last 30 Days)
-                    </h3>
-                    <div className="h-64">
-                      {loading ? (
-                        <div className="h-full flex items-center justify-center text-gray-400">
-                          Loading chart...
-                        </div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={overview.dailyStats || []}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                          >
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              vertical={false}
-                            />
-                            <XAxis dataKey="label" />
-                            <YAxis allowDecimals={false} />
-                            <Tooltip />
-                            <Legend />
-                            <Bar
-                              dataKey="count"
-                              name="Bookings"
-                              fill="#4F46E5"
-                              radius={[4, 4, 0, 0]}
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </motion.div>
-                </motion.div>
-              }
-            />
-            <Route
-              path="/analytics"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Analytics />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/calendar"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <CalendarView />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/customers"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <CustomersList />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/locations"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <LocationManagement />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/integrations"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Integrations />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/team"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <TeamManagement />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/services"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ServicesManagement />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/bookings"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <BookingsList />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/availability"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <AvailabilitySettings />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/reviews"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Reviews />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/resources"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ResourcesList />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/ai-studio"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <AIContentGenerator />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/appearance"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <AppearanceSettings />
-                </motion.div>
-              }
-            />
-
-            <Route
-              path="/notifications"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <NotificationSettings />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/payments"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Payments />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/scan"
-              element={
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <ScanBooking />
-                </motion.div>
-              }
-            />
-          </Routes>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Outlet />
+          </motion.div>
         </AnimatePresence>
       </main>
     </div>

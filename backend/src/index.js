@@ -16,7 +16,7 @@ async function startServer() {
     console.log("✅ Database connected successfully.");
 
     // Sync models (use { force: true } only for dev/reset)
-    await sequelize.sync({ alter: true });
+  //  await sequelize.sync({ alter: true });
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);

@@ -9,6 +9,7 @@ const {
   bookingLimiter,
   publicApiLimiter,
 } = require("../middlewares/rateLimiter");
+const { checkPlanLimit } = require("../middlewares/restrictionMiddleware");
 const { body, query } = require("express-validator");
 
 const validateSlots = [
@@ -101,6 +102,7 @@ router.post(
   "/",
   bookingLimiter,
   validateBooking,
+  checkPlanLimit("appointments"),
   bookingController.createBooking,
 );
 

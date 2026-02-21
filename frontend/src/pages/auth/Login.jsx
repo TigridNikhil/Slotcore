@@ -35,11 +35,17 @@ export default function Login({ isMainDomain }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = dispatch(loginUser(formData));
+    const res = await dispatch(loginUser(formData));
+
     if (res.success) {
-      navigate("/dashboard");
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user.role === "admin" && !user.onboardingCompleted) {
+        navigate("/onboarding");
+      } else {
+        navigate("/dashboard");
+      }
     }
   };
 

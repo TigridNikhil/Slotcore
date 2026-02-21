@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { updateOrganization } from "../../operations/ai/aiAction";
 import { axiosInstance } from "../../utils/baseurl";
+import { applyTheme } from "../../utils/themeUtils";
 import {
   FaPalette,
   FaCheckCircle,
@@ -66,6 +67,11 @@ export default function AppearanceSettings() {
     fetchSettings();
   }, []);
 
+  // Real-time theme preview
+  useEffect(() => {
+    applyTheme(primaryColor);
+  }, [primaryColor]);
+
   const handleSave = () => {
     dispatch(
       updateOrganization({
@@ -75,7 +81,7 @@ export default function AppearanceSettings() {
           template: selectedTemplate,
           sectionVisibility,
         },
-      })
+      }),
     );
   };
 

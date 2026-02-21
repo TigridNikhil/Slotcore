@@ -1,18 +1,32 @@
 @import "tailwindcss";
 
+:root {
+    --org-primary: #4F46E5;
+    --org-primary-50: #EEF2FF;
+    --org-primary-100: #E0E7FF;
+    --org-primary-200: #C7D2FE;
+    --org-primary-300: #A5B4FC;
+    --org-primary-400: #818CF8;
+    --org-primary-500: #6366F1;
+    --org-primary-600: var(--org-primary);
+    --org-primary-700: #4338CA;
+    --org-primary-800: #3730A3;
+    --org-primary-900: #312E81;
+}
+
 @theme {
     /* Indigo - Primary Brand Color */
-    --color-primary-50: #EEF2FF;
-    --color-primary-100: #E0E7FF;
-    --color-primary-200: #C7D2FE;
-    --color-primary-300: #A5B4FC;
-    --color-primary-400: #818CF8;
-    --color-primary-500: #6366F1;
-    --color-primary-600: #4F46E5;
+    --color-primary-50: var(--org-primary-50);
+    --color-primary-100: var(--org-primary-100);
+    --color-primary-200: var(--org-primary-200);
+    --color-primary-300: var(--org-primary-300);
+    --color-primary-400: var(--org-primary-400);
+    --color-primary-500: var(--org-primary-500);
+    --color-primary-600: var(--org-primary-600);
     /* Main Brand Color */
-    --color-primary-700: #4338CA;
-    --color-primary-800: #3730A3;
-    --color-primary-900: #312E81;
+    --color-primary-700: var(--org-primary-700);
+    --color-primary-800: var(--org-primary-800);
+    --color-primary-900: var(--org-primary-900);
     --color-primary-950: #1E1B4B;
 
     /* Teal - Secondary / Accent Color */
