@@ -50,12 +50,12 @@ export default function AppearanceSettings() {
     const fetchSettings = async () => {
       try {
         const res = await axiosInstance.get("/organization/settings");
-        if (res.data) {
-          setOrgData(res.data);
-          setPrimaryColor(res.data.primaryColor || "#4F46E5");
-          setLogoUrl(res.data.logoUrl || "");
-          setSelectedTemplate(res.data.settings?.template || "modern");
-          setSectionVisibility(res.data.settings?.sectionVisibility || {});
+        if (res.data.data) {
+          setOrgData(res.data.data);
+          setPrimaryColor(res.data.data.primaryColor || "#4F46E5");
+          setLogoUrl(res.data.data.logoUrl || "");
+          setSelectedTemplate(res.data.data.settings?.template || "modern");
+          setSectionVisibility(res.data.data.settings?.sectionVisibility || {});
         }
       } catch (err) {
         console.error("Failed to fetch settings", err);

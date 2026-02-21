@@ -14,10 +14,10 @@ exports.createLocation = async (req, res) => {
       contactPhone,
     });
 
-    res.status(201).json(location);
+    res.status(201).successResponse(location);
   } catch (error) {
     console.error("Create Location Error:", error);
-    res.status(500).json({ error: "Failed to create location" });
+    res.serverError(error.message, "Failed to create location");
   }
 };
 
@@ -27,10 +27,10 @@ exports.getLocations = async (req, res) => {
       where: { orgId: req.tenant.id },
       order: [["name", "ASC"]],
     });
-    res.json(locations);
+    res.successResponse(locations);
   } catch (error) {
     console.error("Get Locations Error:", error);
-    res.status(500).json({ error: "Failed to fetch locations" });
+    res.serverError(error.message, "Failed to fetch locations");
   }
 };
 
@@ -41,11 +41,11 @@ exports.getLocation = async (req, res) => {
       where: { id, orgId: req.tenant.id },
     });
 
-    if (!location) return res.status(404).json({ error: "Location not found" });
+    if (!location) return res.notFound("Location not found");
 
-    res.json(location);
+    res.successResponse(location);
   } catch (error) {
-    res.status(500).json({ error: "Error fetching location" });
+    res.serverError(error.message, "Error fetching location");
   }
 };
 
@@ -59,7 +59,7 @@ exports.updateLocation = async (req, res) => {
       where: { id, orgId: req.tenant.id },
     });
 
-    if (!location) return res.status(404).json({ error: "Location not found" });
+    if (!location) return res.notFound("Location not found");
 
     await location.update({
       name,
@@ -70,10 +70,10 @@ exports.updateLocation = async (req, res) => {
       isActive,
     });
 
-    res.json(location);
+    res.successResponse(location);
   } catch (error) {
     console.error("Update Location Error:", error);
-    res.status(500).json({ error: "Failed to update location" });
+    res.serverError(error.message, "Failed to update location");
   }
 };
 
@@ -84,12 +84,12 @@ exports.deleteLocation = async (req, res) => {
       where: { id, orgId: req.tenant.id },
     });
 
-    if (!location) return res.status(404).json({ error: "Location not found" });
+    if (!location) return res.notFound("Location not found");
 
     await location.destroy();
-    res.json({ success: true, message: "Location deleted" });
+    res.successResponse(null, "Location deleted");
   } catch (error) {
     console.error("Delete Location Error:", error);
-    res.status(500).json({ error: "Failed to delete location" });
+    res.serverError(error.message, "Failed to delete location");
   }
 };

@@ -24,7 +24,7 @@ exports.listCustomers = async (req, res) => {
       offset: parseInt(offset),
     });
 
-    res.json({
+    res.successResponse({
       customers: rows,
       total: count,
       page: parseInt(page),
@@ -32,7 +32,7 @@ exports.listCustomers = async (req, res) => {
     });
   } catch (error) {
     console.error("List Customers Error:", error);
-    res.status(500).json({ error: "Failed to fetch customers" });
+    res.serverError(error.message, "Failed to fetch customers");
   }
 };
 
@@ -54,12 +54,12 @@ exports.getCustomer = async (req, res) => {
       ],
     });
 
-    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    if (!customer) return res.notFound("Customer not found");
 
-    res.json(customer);
+    res.successResponse(customer);
   } catch (error) {
     console.error("Get Customer Error:", error);
-    res.status(500).json({ error: "Failed to fetch details" });
+    res.serverError(error.message, "Failed to fetch details");
   }
 };
 
@@ -73,7 +73,7 @@ exports.updateCustomer = async (req, res) => {
       where: { id, orgId: req.orgId },
     });
 
-    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    if (!customer) return res.notFound("Customer not found");
 
     // Validate email uniqueness if changing?
     // For now, trust input or handle DB unique constraint error if we added one (we didn't yet).
@@ -86,10 +86,10 @@ exports.updateCustomer = async (req, res) => {
       tags: tags || customer.tags, // Array
     });
 
-    res.json(customer);
+    res.successResponse(customer);
   } catch (error) {
     console.error("Update Customer Error:", error);
-    res.status(500).json({ error: "Failed to update customer" });
+    res.serverError(error.message, "Failed to update customer");
   }
 };
 
@@ -101,12 +101,12 @@ exports.deleteCustomer = async (req, res) => {
       where: { id, orgId: req.orgId },
     });
 
-    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    if (!customer) return res.notFound("Customer not found");
 
     await customer.destroy();
-    res.json({ success: true, message: "Customer deleted" });
+    res.successResponse(null, "Customer deleted");
   } catch (error) {
     console.error("Delete Customer Error:", error);
-    res.status(500).json({ error: "Failed to delete customer" });
+    res.serverError(error.message, "Failed to delete customer");
   }
 };

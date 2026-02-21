@@ -1,7 +1,7 @@
 const authorize = (allowedRoles = []) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized: No user found" });
+      return res.unauthorized(null, "Unauthorized: No user found");
     }
 
     // Role Hierarchy Mapping (Higher value = more permissions)
@@ -43,9 +43,7 @@ const authorize = (allowedRoles = []) => {
       return next();
     }
 
-    return res
-      .status(403)
-      .json({ error: "Forbidden: Insufficient permissions" });
+    return res.forbidden(null, "Forbidden: Insufficient permissions");
   };
 };
 

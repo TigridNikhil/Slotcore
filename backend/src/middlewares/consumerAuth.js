@@ -5,12 +5,12 @@ const consumerAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      return res.status(401).json({ error: "Authorization required" });
+      return res.unauthorized(null, "Authorization required");
     }
 
     const token = authHeader.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ error: "Token missing" });
+      return res.unauthorized(null, "Token missing");
     }
 
     const decoded = jwt.verify(
@@ -19,14 +19,12 @@ const consumerAuth = async (req, res, next) => {
     );
 
     if (decoded.role !== "consumer") {
-      return res
-        .status(403)
-        .json({ error: "Access denied. Consumer role required." });
+      return res.forbidden(null, "Access denied. Consumer role required.");
     }
 
     const consumer = await Consumer.findByPk(decoded.userId);
     if (!consumer) {
-      return res.status(404).json({ error: "Consumer profile not found" });
+      return res.notFound("Consumer profile not found");
     }
 
     req.consumer = consumer;
@@ -34,7 +32,7 @@ const consumerAuth = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Consumer Auth Error:", error);
-    return res.status(401).json({ error: "Invalid token" });
+    return res.unauthorized(null, "Invalid token");
   }
 };
 

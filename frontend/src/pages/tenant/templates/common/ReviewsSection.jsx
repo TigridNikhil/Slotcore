@@ -13,7 +13,7 @@ export default function ReviewsSection({ orgId, primaryColor }) {
         const res = await axiosInstance.get(
           `/marketplace/orgs/${orgId}/reviews?limit=6`
         );
-        setReviews(res.data.reviews);
+        setReviews(res.data.data.reviews);
         // We could fetch explicit stats, but we can also use Org's stats passed down or calculate from response if needed.
         // For now, let's rely on what's visible or simple display.
         // Actually, the GET /orgs/:id/reviews endpoint returns { reviews, total, ... }

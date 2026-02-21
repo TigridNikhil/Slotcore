@@ -12,13 +12,13 @@ exports.requestOtp = async (req, res) => {
     const { email, name, mobile, type } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "Email is required" });
+      return res.badRequest("Email is required");
     }
 
     // Find or create consumer
     let consumer = await Consumer.findOne({ where: { email } });
     if (!consumer && type !== "signup") {
-      return res.status(404).json({ error: "User not found ! Please Sign Up" });
+      return res.notFound("User not found ! Please Sign Up");
     }
     if (!consumer && type === "signup") {
       consumer = await Consumer.create({ email, name, mobile });
@@ -36,13 +36,13 @@ exports.requestOtp = async (req, res) => {
     // Send Email
     const sent = await emailService.sendOtp(email, otp);
     if (!sent) {
-      return res.status(500).json({ error: "Failed to send OTP email" });
+      return res.serverError(null, "Failed to send OTP email");
     }
 
-    res.json({ message: "OTP sent successfully" });
+    res.successResponse(null, "OTP sent successfully");
   } catch (error) {
     console.error("Request OTP Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.serverError(error.message, "Internal Server Error");
   }
 };
 
@@ -51,23 +51,25 @@ exports.verifyOtp = async (req, res) => {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return res.status(400).json({ error: "Email and OTP are required" });
+      return res.badRequest("Email and OTP are required");
     }
 
     const consumer = await Consumer.findOne({ where: { email } });
 
     if (!consumer) {
-      return res.status(404).json({ error: "User not found" });
+      return res.notFound("User not found");
     }
 
     // Check OTP
     if (consumer.otp !== otp) {
-      return res.status(401).json({ error: "Invalid OTP" });
+      return res.status(401).json({ success: false, message: "Invalid OTP" });
     }
 
     // Check Expiry
     if (new Date() > consumer.otpExpiresAt) {
-      return res.status(401).json({ error: "OTP has expired" });
+      return res
+        .status(401)
+        .json({ success: false, message: "OTP has expired" });
     }
 
     // Success: Clear OTP and Verify
@@ -76,30 +78,38 @@ exports.verifyOtp = async (req, res) => {
     consumer.isVerified = true;
     await consumer.save();
 
-    // Generate Token
-    // Distinguish from regular users by role 'consumer'
-    const token = jwt.sign(
+    // Generate Tokens
+    const accesstoken = jwt.sign(
       {
         userId: consumer.id,
         role: "consumer",
         email: consumer.email,
       },
       process.env.JWT_SECRET || "secret_dev_key",
-      { expiresIn: "7d" }, // Long lived for mobile
+      { expiresIn: "1d" },
     );
 
-    res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: consumer.id,
-        email: consumer.email,
-        name: consumer.name,
-        role: "consumer",
+    const refreshtoken = jwt.sign(
+      { userId: consumer.id },
+      process.env.JWT_REFRESH_SECRET || "refresh_secret_dev_key",
+      { expiresIn: "7d" },
+    );
+
+    res.successResponse(
+      {
+        accesstoken,
+        refreshtoken,
+        user: {
+          id: consumer.id,
+          email: consumer.email,
+          name: consumer.name,
+          role: "consumer",
+        },
       },
-    });
+      "Login successful",
+    );
   } catch (error) {
     console.error("Verify OTP Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.serverError(error.message, "Internal Server Error");
   }
 };

@@ -25,7 +25,7 @@ export default function LocationManagement() {
   const fetchLocations = async () => {
     try {
       const res = await axiosInstance.get("/locations");
-      setLocations(res.data);
+      setLocations(res.data.data);
     } catch (error) {
       console.error("Failed to fetch locations", error);
     } finally {

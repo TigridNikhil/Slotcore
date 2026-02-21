@@ -4,9 +4,10 @@ const { Service, ServicePricing } = require("../models");
 exports.listServices = async (req, res) => {
   try {
     if (!req.orgId) {
-      return res.status(400).json({
-        error: "Tenant context required (subdomain or x-tenant-slug)",
-      });
+      return res.badRequest(
+        null,
+        "Tenant context required (subdomain or x-tenant-slug)",
+      );
     }
 
     const services = await Service.findAll({
@@ -31,10 +32,10 @@ exports.listServices = async (req, res) => {
       ],
       order: [["name", "ASC"]],
     });
-    res.json(services);
+    res.successResponse(services);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error fetching services" });
+    res.serverError(error.message, "Server error fetching services");
   }
 };
 
@@ -47,7 +48,7 @@ exports.createService = async (req, res) => {
       req.user.role !== "org_admin" &&
       req.user.role !== "super_admin"
     ) {
-      return res.status(403).json({ error: "Only admins can create services" });
+      return res.forbidden(null, "Only admins can create services");
     }
 
     const {
@@ -63,7 +64,7 @@ exports.createService = async (req, res) => {
     } = req.body;
 
     if (!name || !durationMin) {
-      return res.status(400).json({ error: "Name and duration are required" });
+      return res.badRequest("Name and duration are required");
     }
 
     const service = await Service.create({
@@ -118,10 +119,10 @@ exports.createService = async (req, res) => {
       ],
     });
 
-    res.status(201).json(serviceWithStaff);
+    res.status(201).successResponse(serviceWithStaff);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error creating service" });
+    res.serverError(error.message, "Server error creating service");
   }
 };
 
@@ -133,7 +134,7 @@ exports.updateService = async (req, res) => {
       req.user.role !== "org_admin" &&
       req.user.role !== "super_admin"
     ) {
-      return res.status(403).json({ error: "Only admins can update services" });
+      return res.forbidden(null, "Only admins can update services");
     }
 
     const { id } = req.params;
@@ -154,7 +155,7 @@ exports.updateService = async (req, res) => {
     });
 
     if (!service) {
-      return res.status(404).json({ error: "Service not found" });
+      return res.notFound("Service not found");
     }
 
     await service.update({
@@ -224,10 +225,10 @@ exports.updateService = async (req, res) => {
       ],
     });
 
-    res.json(updatedService);
+    res.successResponse(updatedService);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error updating service" });
+    res.serverError(error.message, "Server error updating service");
   }
 };
 
@@ -235,7 +236,7 @@ exports.updateService = async (req, res) => {
 exports.deleteService = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Only admins can delete services" });
+      return res.forbidden(null, "Only admins can delete services");
     }
 
     const { id } = req.params;
@@ -244,12 +245,12 @@ exports.deleteService = async (req, res) => {
     });
 
     if (!deleted) {
-      return res.status(404).json({ error: "Service not found" });
+      return res.notFound("Service not found");
     }
 
-    res.json({ message: "Service deleted successfully" });
+    res.successResponse(null, "Service deleted successfully");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error deleting service" });
+    res.serverError(error.message, "Server error deleting service");
   }
 };

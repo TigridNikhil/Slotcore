@@ -10,10 +10,10 @@ exports.getTeamMembers = async (req, res) => {
       attributes: { exclude: ["passwordHash"] },
       order: [["name", "ASC"]],
     });
-    res.json(members);
+    res.successResponse(members);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch team members" });
+    res.serverError(error.message, "Failed to fetch team members");
   }
 };
 
@@ -27,12 +27,10 @@ exports.addTeamMember = async (req, res) => {
       where: { email, orgId: req.orgId },
     });
     if (existing) {
-      return res
-        .status(400)
-        .json({ error: "User already exists in this organization" });
+      return res.badRequest("User already exists in this organization");
     }
 
-    // Hash password (if provided, else generate random for invite flow - simplifying to required for now or default)
+    // Hash password
     const initialPassword = password || "123456"; // Default for MVP/Demo
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(initialPassword, salt);
@@ -57,10 +55,10 @@ exports.addTeamMember = async (req, res) => {
       .sendTeamInvitation(newUser, initialPassword, org.name)
       .catch((err) => console.error("Failed to send invitation email:", err));
 
-    res.status(201).json(userWithoutPass);
+    res.status(201).successResponse(userWithoutPass);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to add team member" });
+    res.serverError(error.message, "Failed to add team member");
   }
 };
 
@@ -74,15 +72,15 @@ exports.updateTeamMember = async (req, res) => {
       where: { id: userId, orgId: req.orgId },
     });
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.notFound("User not found");
 
     await user.update({ name, role, title });
 
     const { passwordHash: _, ...userWithoutPass } = user.toJSON();
-    res.json(userWithoutPass);
+    res.successResponse(userWithoutPass);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update member" });
+    res.serverError(error.message, "Failed to update member");
   }
 };
 
@@ -91,23 +89,22 @@ exports.removeTeamMember = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Prevent deleting self?
+    // Prevent deleting self
     if (userId === req.user.id) {
-      return res.status(400).json({ error: "Cannot delete yourself" });
+      return res.badRequest("Cannot delete yourself");
     }
 
     const user = await User.findOne({
       where: { id: userId, orgId: req.orgId },
     });
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.notFound("User not found");
 
-    // Actually delete or soft delete? Destroy for now.
     await user.destroy();
 
-    res.json({ success: true, message: "Member removed" });
+    res.successResponse(null, "Member removed");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to remove member" });
+    res.serverError(error.message, "Failed to remove member");
   }
 };

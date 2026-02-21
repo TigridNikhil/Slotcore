@@ -9,11 +9,16 @@ export const loginUser = (payload) => async (dispatch) => {
   try {
     const response = await axiosInstance.post("/auth/login", payload);
 
-    if (response.data) {
-      const { token, user } = response.data;
+    if (response.data.success) {
+      const { accesstoken, refreshtoken, user } = response.data.data || {};
+
+      if (!user) {
+        throw new Error("User data is missing in response");
+      }
 
       // Save to localStorage
-      localStorage.setItem("token", token);
+      localStorage.setItem("accesstoken", accesstoken);
+      localStorage.setItem("refreshtoken", refreshtoken);
       localStorage.setItem("user", JSON.stringify(user));
       if (user.slug) {
         localStorage.setItem("tenantSlug", user.slug);
@@ -25,6 +30,7 @@ export const loginUser = (payload) => async (dispatch) => {
       return { success: true };
     }
   } catch (error) {
+    console.log("error", error);
     const errorMessage = error.response?.data?.error || "Login failed";
 
     // Display error notification
@@ -35,96 +41,40 @@ export const loginUser = (payload) => async (dispatch) => {
   }
 };
 
-export const forgotVerifyPassword = (payload) => async (dispatch) => {
+export const forgotPasswordRequest = (email) => async (dispatch) => {
+  dispatch(setLoading());
+  try {
+    const response = await axiosInstance.post("/auth/forgot-password/request", {
+      email,
+    });
+    if (response.data.success) {
+      showNotification({ type: "SUCCESS", message: response.data.message });
+      return { success: true };
+    }
+  } catch (error) {
+    const errorMessage = error.response?.data?.error || "Request failed";
+    showNotification({ type: "ERROR", message: errorMessage });
+    dispatch(setError(errorMessage));
+    return { success: false, error: errorMessage };
+  }
+};
+
+export const resetPassword = (payload) => async (dispatch) => {
   dispatch(setLoading());
   try {
     const response = await axiosInstance.post(
-      "/verifyforgot-password",
-      payload
+      "/auth/forgot-password/reset",
+      payload,
     );
-
     if (response.data.success) {
-      // Display success notification
       showNotification({ type: "SUCCESS", message: response.data.message });
-      return { success: true, message: response.data.message };
+      return { success: true };
     }
   } catch (error) {
-    const errorMessage =
-      error.response?.data?.error || "Password Verify failed";
-
-    // Display error notification
+    const errorMessage = error.response?.data?.error || "Reset failed";
     showNotification({ type: "ERROR", message: errorMessage });
-
     dispatch(setError(errorMessage));
-  }
-};
-
-export const forgotPassword = (payload) => async (dispatch) => {
-  dispatch(setLoading());
-  try {
-    const response = await axiosInstance.post("/forgot-password", payload);
-    if (response.data.success) {
-      // Display success notification
-      showNotification({ type: "SUCCESS", message: response.data.message });
-      return { success: true, message: response.data.message };
-    }
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.error || "Password Verify failed";
-
-    // Display error notification
-    showNotification({ type: "ERROR", message: errorMessage });
-
-    dispatch(setError(errorMessage));
-  }
-};
-
-export const resetPassword = (payload, navigate) => async (dispatch) => {
-  dispatch(setLoading());
-  try {
-    const response = await axiosInstance.post("/reset-password", payload);
-
-    if (response.data.success) {
-      // Display success notification
-      showNotification({ type: "SUCCESS", message: response.data.message });
-      localStorage.setItem("isNewPass", true);
-
-      // Navigate to home page
-      navigate("/"); // Navigate to the home page
-      return { success: true, message: response.data.message };
-    }
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.error || "Password Verify failed";
-
-    // Display error notification
-    showNotification({ type: "ERROR", message: errorMessage });
-
-    dispatch(setError(errorMessage));
-  }
-};
-export const resetPasswordInPage = (payload) => async (dispatch) => {
-  dispatch(setLoading());
-  try {
-    const response = await axiosInstance.post("/reset-password", payload);
-
-    if (response.data.success) {
-      // Display success notification
-      showNotification({ type: "SUCCESS", message: response.data.message });
-      localStorage.setItem("isNewPass", true);
-
-      // Navigate to home page
-
-      return { success: true, message: response.data.message };
-    }
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.error || "Password Verify failed";
-
-    // Display error notification
-    showNotification({ type: "ERROR", message: errorMessage });
-
-    dispatch(setError(errorMessage));
+    return { success: false, error: errorMessage };
   }
 };
 
@@ -134,18 +84,19 @@ export const registerOrg = (payload) => async (dispatch) => {
   try {
     const response = await axiosInstance.post("/auth/register-org", payload);
 
-    if (response.data) {
-      const { token, organization } = response.data;
+    if (response.data.success) {
+      const { accesstoken, refreshtoken, organization, user } =
+        response.data.data;
 
-      localStorage.setItem("token", token);
+      localStorage.setItem("accesstoken", accesstoken);
+      localStorage.setItem("refreshtoken", refreshtoken);
       if (organization.slug) {
         localStorage.setItem("tenantSlug", organization.slug);
       }
-
-      // We might want to set user here too if the backend returns it,
-      // but for now let's just handle the success.
-      // Usually register returns the user/org.
-      // Based on RegisterOrg.jsx usage: const { token, organization } = res.data;
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+        dispatch(setUser(user));
+      }
 
       showNotification({
         type: "SUCCESS",

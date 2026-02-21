@@ -48,7 +48,7 @@ exports.getMyBookings = async (req, res) => {
       offset: parseInt(offset),
     });
 
-    res.json({
+    res.successResponse({
       bookings: rows,
       total: count,
       page: parseInt(page),
@@ -56,7 +56,7 @@ exports.getMyBookings = async (req, res) => {
     });
   } catch (error) {
     console.error("Get My Bookings Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.serverError(error.message, "Internal Server Error");
   }
 };
 
@@ -99,14 +99,14 @@ exports.getConsumerStats = async (req, res) => {
       limit: 3,
     });
 
-    res.json({
+    res.successResponse({
       totalBookings,
       upcomingBookings,
       nextBookings,
     });
   } catch (error) {
     console.error("Get Consumer Stats Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.serverError(error.message, "Internal Server Error");
   }
 };
 
@@ -116,19 +116,12 @@ exports.updateProfile = async (req, res) => {
     const { email } = req.consumer;
     const { name, mobile } = req.body;
 
-    // Find consumer by email (req.consumer is just the decoded token payload usually, or the model instance if middleware attaches it.
-    // Let's verify middleware: consumerAuth usually attaches req.consumer as the payload or model.
-    // If it's the model, we can verify. If just payload, we need to fetch.
-    // Looking at other methods, it uses { email } = req.consumer, implying it might be payload.
-    // But cancelBooking does logic with req.consumer.
-    // Let's assume we need to fetch the model to update it.
-
     const consumer = await require("../models").Consumer.findOne({
       where: { email },
     });
 
     if (!consumer) {
-      return res.status(404).json({ error: "Consumer not found" });
+      return res.notFound("Consumer not found");
     }
 
     if (name !== undefined) consumer.name = name;
@@ -136,35 +129,32 @@ exports.updateProfile = async (req, res) => {
 
     await consumer.save();
 
-    res.json({
-      success: true,
-      user: {
+    res.successResponse(
+      {
         name: consumer.name,
         mobile: consumer.mobile,
         email: consumer.email,
       },
-    });
+      "Profile updated successfully",
+    );
   } catch (error) {
     console.error("Update Profile Error:", error);
-    res.status(500).json({ error: "Failed to update profile" });
+    res.serverError(error.message, "Failed to update profile");
   }
 };
 
 // Get Profile
 exports.getProfile = async (req, res) => {
   try {
-    // Ensure we get plain object
     const consumerData = req.consumer.toJSON
       ? req.consumer.toJSON()
       : req.consumer;
     const { id, email, name, mobile } = consumerData;
 
-    console.log("Fetching profile for:", email, "Mobile:", mobile);
-
-    res.json({ user: { id, email, name, mobile } });
+    res.successResponse({ id, email, name, mobile });
   } catch (error) {
     console.error("Get Profile Error:", error);
-    res.status(500).json({ error: "Failed to fetch profile" });
+    res.serverError(error.message, "Failed to fetch profile");
   }
 };
 
@@ -181,13 +171,11 @@ exports.cancelBooking = async (req, res) => {
     });
 
     if (!booking) {
-      return res
-        .status(404)
-        .json({ error: "Booking not found or access denied" });
+      return res.notFound("Booking not found or access denied");
     }
 
     if (booking.status === "cancelled" || booking.status === "completed") {
-      return res.status(400).json({ error: "Cannot cancel this booking." });
+      return res.badRequest("Cannot cancel this booking.");
     }
 
     booking.status = "cancelled";
@@ -197,16 +185,15 @@ exports.cancelBooking = async (req, res) => {
 
     await booking.save();
 
-    // Send Email
     const emailService = require("../services/emailService");
     emailService
       .sendBookingCancellation(booking, booking.Organization, reason)
       .catch((err) => console.error("Email fail", err));
 
-    res.json({ success: true, message: "Booking cancelled successfully" });
+    res.successResponse(null, "Booking cancelled successfully");
   } catch (error) {
     console.error("Cancel Error:", error);
-    res.status(500).json({ error: "Failed to cancel booking" });
+    res.serverError(error.message, "Failed to cancel booking");
   }
 };
 
@@ -218,7 +205,7 @@ exports.rescheduleBooking = async (req, res) => {
     const { newStartTime } = req.body; // ISO String
 
     if (!newStartTime) {
-      return res.status(400).json({ error: "New start time required" });
+      return res.badRequest("New start time required");
     }
 
     const booking = await Booking.findOne({
@@ -227,41 +214,15 @@ exports.rescheduleBooking = async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.notFound("Booking not found");
     }
 
-    // Calculate duration
     const durationMs =
       new Date(booking.endTime).getTime() -
       new Date(booking.startTime).getTime();
     const start = new Date(newStartTime);
     const end = new Date(start.getTime() + durationMs);
 
-    // Basic Availability Check (Conflict with same org/service?)
-    // For simplicity/robustness, we check strict conflict for the Organization or Staff?
-    // Since we don't have full slots logic here easily, we check if ANY booking overlaps for same Org & Service/Staff.
-    // Ideally reuse `getAvailableSlots` logic, but that's heavy.
-    // Minimal check: Is the specific resource/staff free?
-    // If staffId is set, check staff. If not, check service capacity.
-    // Fallback: Check strictly against same Service ID in same Org.
-
-    // Check constraints
-    const conflict = await Booking.findOne({
-      where: {
-        orgId: booking.orgId,
-        serviceId: booking.serviceId, // Same service
-        status: { [Op.ne]: "cancelled" },
-        id: { [Op.ne]: id },
-        [Op.and]: [
-          { startTime: { [Op.lt]: end } },
-          { endTime: { [Op.gt]: start } },
-        ],
-      },
-    });
-
-    // NOTE: This is a loose check. It doesn't account for parallel capacity (e.g. 5 slots).
-    // If service has capacity > 1, this blocks valid reschedules.
-    // IMPROVEMENT: Check count vs Capacity.
     const service = await Service.findByPk(booking.serviceId);
     if (service) {
       const capacity = service.capacity || 1;
@@ -279,24 +240,25 @@ exports.rescheduleBooking = async (req, res) => {
       });
 
       if (count >= capacity) {
-        return res.status(409).json({ error: "Slot is fully booked." });
+        return res
+          .status(409)
+          .json({ success: false, message: "Slot is fully booked." });
       }
     }
 
     booking.startTime = start;
     booking.endTime = end;
-    booking.status = "confirmed"; // Re-confirm if pending
+    booking.status = "confirmed";
     await booking.save();
 
-    // Email
     const emailService = require("../services/emailService");
     emailService
       .sendBookingReschedule(booking, booking.Organization, start)
       .catch((err) => console.error("Email fail", err));
 
-    res.json({ success: true, booking });
+    res.successResponse(booking, "Booking rescheduled successfully");
   } catch (error) {
     console.error("Reschedule Error:", error);
-    res.status(500).json({ error: "Failed to reschedule" });
+    res.serverError(error.message, "Failed to reschedule");
   }
 };

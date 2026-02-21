@@ -52,7 +52,7 @@ export default function MarketplaceHome() {
     try {
       // Use the public categories endpoint
       const res = await axiosInstance.get("/categories");
-      setCategories(res.data);
+      setCategories(res.data.data);
     } catch (error) {
       console.error("Failed to fetch categories", error);
     }
@@ -82,7 +82,7 @@ export default function MarketplaceHome() {
       const res = await axiosInstance.get("/marketplace/organizations", {
         params,
       });
-      setOrganizations(res.data);
+      setOrganizations(res.data.data);
     } catch (error) {
       console.error("Failed to fetch marketplace", error);
     } finally {

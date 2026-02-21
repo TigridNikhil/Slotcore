@@ -29,10 +29,10 @@ exports.trackEvent = async (req, res) => {
       await stat.increment("redirects");
     }
 
-    res.json({ success: true });
+    res.successResponse(null, "Event tracked");
   } catch (error) {
     console.error("Track Error:", error);
-    res.status(500).json({ error: "Failed to track event" });
+    res.serverError(error.message, "Failed to track event");
   }
 };
 
@@ -46,17 +46,15 @@ exports.listOrganizations = async (req, res) => {
     };
 
     if (q) {
-      whereClause[Op.or] = [
-        // Case-insensitive search on name or address
-        { name: { [Op.iLike]: `%${q}%` } }, // Postgres
-        { address: { [Op.iLike]: `%${q}%` } },
-      ];
-      // Note: If using SQLite/MySQL, use Op.like instead of Op.iLike
-      // For cross-db safety in this demo context, let's use Op.like (usually case-insensitive in MySQL, depends on collation)
       if (sequelize.options.dialect === "sqlite") {
         whereClause[Op.or] = [
           { name: { [Op.like]: `%${q}%` } },
           { address: { [Op.like]: `%${q}%` } },
+        ];
+      } else {
+        whereClause[Op.or] = [
+          { name: { [Op.iLike]: `%${q}%` } },
+          { address: { [Op.iLike]: `%${q}%` } },
         ];
       }
     }
@@ -72,7 +70,6 @@ exports.listOrganizations = async (req, res) => {
     if (categoryId) {
       whereClause.categoryId = categoryId;
     } else if (category) {
-      // Fallback to legacy string category
       whereClause.category = category;
     }
 
@@ -84,7 +81,7 @@ exports.listOrganizations = async (req, res) => {
         "slug",
         "logoUrl",
         "primaryColor",
-        "content", // Contains heroTagline etc
+        "content",
         "address",
         "marketplaceTag",
         "marketplaceRank",
@@ -103,14 +100,14 @@ exports.listOrganizations = async (req, res) => {
       ],
       order: [
         ["marketplaceRank", "DESC"],
-        ["marketplaceTag", "DESC"], // Simple alpha sort for now, or specific custom order if needed
+        ["marketplaceTag", "DESC"],
         ["name", "ASC"],
       ],
     });
 
-    res.json(organizations);
+    res.successResponse(organizations);
   } catch (error) {
     console.error("Marketplace List Error:", error);
-    res.status(500).json({ error: "Failed to fetch marketplace listings" });
+    res.serverError(error.message, "Failed to fetch marketplace listings");
   }
 };

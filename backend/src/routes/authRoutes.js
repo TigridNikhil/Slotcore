@@ -14,4 +14,11 @@ router.post("/login", authController.login);
 router.post("/mobile/otp/request", mobileAuthController.requestOtp);
 router.post("/mobile/otp/verify", mobileAuthController.verifyOtp);
 
+// POST /api/auth/refresh/refreshtoken
+router.post("/refresh/refreshtoken", authController.refreshToken);
+
+// Forgot Password Flow
+router.post("/forgot-password/request", authController.forgotPasswordRequest);
+router.post("/forgot-password/reset", authController.resetPassword);
+
 module.exports = router;

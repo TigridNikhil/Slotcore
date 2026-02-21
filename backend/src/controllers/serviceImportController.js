@@ -34,20 +34,19 @@ exports.downloadTemplate = (req, res) => {
 
     res.setHeader(
       "Content-Disposition",
-      'attachment; filename="Service_Import_Template.xlsx"'
+      'attachment; filename="Service_Import_Template.xlsx"',
     );
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.send(buffer);
   } catch (error) {
     console.error("Template Error:", error);
-    res.status(500).json({ error: "Failed to generate template" });
+    res.serverError(error.message, "Failed to generate template");
   }
 };
 
-// Import services from uploaded Excel file
 // Import services from JSON data
 exports.importServices = async (req, res) => {
   try {
@@ -56,7 +55,7 @@ exports.importServices = async (req, res) => {
     const { Location } = require("../models");
 
     if (!services || !Array.isArray(services) || services.length === 0) {
-      return res.status(400).json({ error: "No service data provided" });
+      return res.badRequest("No service data provided");
     }
 
     // Fetch all locations for this org for mapping
@@ -88,14 +87,14 @@ exports.importServices = async (req, res) => {
         // Handle Locations Mapping
         if (row.Locations) {
           const locNames = row.Locations.split(",").map((s) =>
-            s.trim().toLowerCase()
+            s.trim().toLowerCase(),
           );
           const locIdsToAssign = [];
 
           for (const name of locNames) {
             // Find location by name (flexible check) or ID
             const match = orgLocations.find(
-              (l) => l.name.toLowerCase() === name || l.id === name
+              (l) => l.name.toLowerCase() === name || l.id === name,
             );
             if (match) locIdsToAssign.push(match.id);
           }
@@ -112,12 +111,12 @@ exports.importServices = async (req, res) => {
       }
     }
 
-    res.json({
+    res.successResponse({
       message: `Imported ${successCount} services successfully.`,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
     console.error("Import Error:", error);
-    res.status(500).json({ error: "Failed to process import file" });
+    res.serverError(error.message, "Failed to process import file");
   }
 };

@@ -42,10 +42,10 @@ export default function ServiceForm({ initialData, onServiceCreated }) {
           axiosInstance.get("/locations"),
           axiosInstance.get("/resources"),
         ]);
-        setStaffList(staffRes.data);
-        setLocationsList(locRes.data);
+        setStaffList(staffRes.data.data);
+        setLocationsList(locRes.data.data);
         // Assuming resRes.data is array of resources
-        setResourcesList(resRes.data);
+        setResourcesList(resRes.data.data);
       } catch (err) {
         console.error("Failed to fetch dependencies", err);
       }
@@ -397,8 +397,8 @@ export default function ServiceForm({ initialData, onServiceCreated }) {
           {loading
             ? "Saving..."
             : initialData
-            ? "Update Service"
-            : "Add Service"}
+              ? "Update Service"
+              : "Add Service"}
         </button>
       </form>
     </div>

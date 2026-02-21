@@ -8,10 +8,10 @@ exports.getSchedules = async (req, res) => {
       where: { orgId: req.orgId },
       order: [["dayOfWeek", "ASC"]],
     });
-    res.json(schedules);
+    res.successResponse(schedules);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error fetching schedules" });
+    res.serverError(error.message, "Error fetching schedules");
   }
 };
 
@@ -20,22 +20,19 @@ exports.getSchedules = async (req, res) => {
 exports.updateSchedules = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
+      return res.forbidden(null, "Admin access required");
     }
 
     const { schedules } = req.body; // Array of objects
     if (!Array.isArray(schedules)) {
-      return res.status(400).json({ error: "Schedules must be an array" });
+      return res.badRequest("Schedules must be an array");
     }
 
-    // Transaction? Maybe overkill but safer.
-    // For simplicity, we'll loop and upset.
     const results = [];
     for (const s of schedules) {
       if (s.dayOfWeek === undefined) continue;
 
       // Find or Create logic
-      // We want to ensure one entry per dayOfWeek per Org
       const [record, created] = await Schedule.findOrCreate({
         where: { orgId: req.orgId, dayOfWeek: s.dayOfWeek },
         defaults: {
@@ -61,9 +58,9 @@ exports.updateSchedules = async (req, res) => {
       results.push(record);
     }
 
-    res.json(results);
+    res.successResponse(results);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error updating schedules" });
+    res.serverError(error.message, "Error updating schedules");
   }
 };

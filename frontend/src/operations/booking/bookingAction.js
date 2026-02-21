@@ -9,7 +9,7 @@ export const getBookings =
       const response = await axiosInstance.get("/bookings", {
         params: filters,
       });
-      dispatch(setBookings(response.data));
+      dispatch(setBookings(response.data.data));
     } catch (error) {
       const errorMessage =
         error.response?.data?.error || "Failed to fetch bookings";

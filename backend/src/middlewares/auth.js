@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ error: "Token missing" });
+    return res.unauthorized(null, "Token missing");
   }
 
   try {
@@ -31,13 +31,14 @@ module.exports = (req, res, next) => {
       req.user.role !== "consumer" &&
       req.user.orgId !== req.orgId
     ) {
-      return res.status(403).json({
-        error: "Access denied: User does not belong to this organization.",
-      });
+      return res.forbidden(
+        null,
+        "Access denied: User does not belong to this organization.",
+      );
     }
 
     next();
   } catch (err) {
-    return res.status(401).json({ error: "Invalid token" });
+    return res.unauthorized(null, "Invalid token");
   }
 };

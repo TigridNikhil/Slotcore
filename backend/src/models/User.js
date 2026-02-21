@@ -31,6 +31,14 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    otpExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     indexes: [
@@ -39,7 +47,7 @@ const User = sequelize.define(
         fields: ["orgId", "email"],
       },
     ],
-  }
+  },
 );
 
 module.exports = User;

@@ -516,3 +516,37 @@ exports.sendOtp = async (email, otp) => {
     return false;
   }
 };
+
+exports.sendForgotPasswordOtp = async (email, otp) => {
+  try {
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #4F46E5;">Password Reset Request 🔐</h2>
+        <p>Hi there,</p>
+        <p>You requested to reset your password. Use the verification code below to proceed:</p>
+        
+        <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; margin: 24px 0; text-align: center; letter-spacing: 4px;">
+            <span style="font-size: 32px; font-weight: bold; color: #0284c7;">${otp}</span>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes. If you didn't request a password reset, you can safely ignore this email.</p>
+        
+        <p style="font-size: 13px; color: #999; margin-top: 30px; text-align: center;">
+           Slotcore Security
+        </p>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: `"Slotcore Security" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `Your Password Reset Code: ${otp}`,
+      html: html,
+    });
+    console.log(`[Email] Forgot password OTP sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error("Forgot Password OTP Email Error:", error);
+    return false;
+  }
+};

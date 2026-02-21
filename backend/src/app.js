@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const { sequelize } = require("./models");
 
 const tenantResolver = require("./middlewares/tenantResolver");
+const responseMiddleware = require("./middlewares/responseMiddleware");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -66,6 +67,7 @@ app.use(
 );
 app.use(express.json());
 app.use(morgan("dev"));
+app.use(responseMiddleware);
 
 app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 app.get(/^(?!\/api).*/, (req, res) => {

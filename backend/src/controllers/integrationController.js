@@ -5,6 +5,7 @@ const { google } = require("googleapis");
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ||
   "http://localhost:5000/api/integrations/google/callback";
 
 exports.getAuthUrl = async (req, res) => {
@@ -13,15 +14,13 @@ exports.getAuthUrl = async (req, res) => {
 
     if (provider === "google") {
       if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-        return res
-          .status(500)
-          .json({ error: "Google credentials not configured" });
+        return res.serverError(null, "Google credentials not configured");
       }
 
       const oAuth2Client = new google.auth.OAuth2(
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
-        GOOGLE_REDIRECT_URI
+        GOOGLE_REDIRECT_URI,
       );
 
       const authUrl = oAuth2Client.generateAuthUrl({
@@ -31,16 +30,17 @@ exports.getAuthUrl = async (req, res) => {
         prompt: "consent", // Force refresh token
       });
 
-      return res.json({ url: authUrl });
+      return res.successResponse({ url: authUrl });
     } else if (provider === "outlook") {
-      // Outlook logic placeholder
-      return res.status(501).json({ error: "Outlook not yet implemented" });
+      return res
+        .status(501)
+        .json({ success: false, message: "Outlook not yet implemented" });
     } else {
-      return res.status(400).json({ error: "Invalid provider" });
+      return res.badRequest("Invalid provider");
     }
   } catch (error) {
     console.error("Auth URL Error:", error);
-    res.status(500).json({ error: "Failed to generate auth URL" });
+    res.serverError(error.message, "Failed to generate auth URL");
   }
 };
 
@@ -53,7 +53,7 @@ exports.callback = async (req, res) => {
       const oAuth2Client = new google.auth.OAuth2(
         GOOGLE_CLIENT_ID,
         GOOGLE_CLIENT_SECRET,
-        GOOGLE_REDIRECT_URI
+        GOOGLE_REDIRECT_URI,
       );
 
       const { tokens } = await oAuth2Client.getToken(code);
@@ -63,11 +63,9 @@ exports.callback = async (req, res) => {
         const stateData = JSON.parse(state);
         orgId = stateData.orgId;
       } catch (e) {
-        return res.status(400).json({ error: "Invalid state parameter" });
+        return res.badRequest("Invalid state parameter");
       }
 
-      // Save or Update Integration
-      // Check if one exists
       const [integration, created] = await Integration.findOrCreate({
         where: { orgId, provider: "google" },
         defaults: {
@@ -82,16 +80,17 @@ exports.callback = async (req, res) => {
         await integration.save();
       }
 
-      // Redirect to frontend
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
       return res.redirect(
-        "http://localhost:5173/dashboard/integrations?status=success"
+        `${frontendUrl}/dashboard/integrations?status=success`,
       );
     }
 
-    res.status(400).json({ error: "Invalid provider" });
+    res.badRequest(null, "Invalid provider");
   } catch (error) {
     console.error("Callback Error:", error);
-    res.redirect("http://localhost:5173/dashboard/integrations?status=error");
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendUrl}/dashboard/integrations?status=error`);
   }
 };
 
@@ -102,10 +101,10 @@ exports.getIntegrations = async (req, res) => {
       where: { orgId },
       attributes: ["id", "provider", "isActive", "lastSyncAt", "createdAt"], // Don't send credentials
     });
-    res.json(integrations);
+    res.successResponse(integrations);
   } catch (error) {
     console.error("Get Integrations Error:", error);
-    res.status(500).json({ error: "Failed to fetch integrations" });
+    res.serverError(error.message, "Failed to fetch integrations");
   }
 };
 
@@ -118,9 +117,9 @@ exports.disconnect = async (req, res) => {
       where: { orgId, provider },
     });
 
-    res.json({ success: true });
+    res.successResponse(null, "Disconnected successfully");
   } catch (error) {
     console.error("Disconnect Error:", error);
-    res.status(500).json({ error: "Failed to disconnect" });
+    res.serverError(error.message, "Failed to disconnect");
   }
 };

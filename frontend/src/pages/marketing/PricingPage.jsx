@@ -16,79 +16,82 @@ export default function PricingPage() {
   const plans = [
     {
       name: "Starter",
-      description: "Perfect for independent professionals",
-      monthlyPrice: 0,
-      yearlyPrice: 0,
+      description: "For solo professionals getting started",
+      monthlyPrice: 499,
+      yearlyPrice: 4999,
       features: [
         "1 User Account",
-        "100 Appointments / mo",
-        "Basic Calendar",
+        "1 Location",
+        "Up to 200 Appointments / month",
+        "Basic Booking Page",
         "Email Notifications",
-        "Mobile App Access",
+        "Pay at Venue Option",
       ],
       notIncluded: [
-        "SMS Reminders",
+        "WhatsApp/SMS Reminders",
+        "Online Payments",
         "Team Management",
-        "Advanced Analytics",
-        "API Access",
+        "Custom Branding",
       ],
-      icon: <FaRocket className="text-blue-500" />,
-      buttonVariant: "outline",
       popular: false,
+      icon: <FaRocket />,
+      buttonVariant: "outline",
     },
     {
       name: "Growth",
-      description: "For small teams scaling up",
-      monthlyPrice: 29,
-      yearlyPrice: 24,
+      description: "For growing clinics & service teams",
+      monthlyPrice: 999,
+      yearlyPrice: 9999,
       features: [
         "Up to 5 Users",
+        "3 Locations",
         "Unlimited Appointments",
-        "Google/Outlook Sync",
-        "SMS Reminders",
-        "Client Portal",
+        "WhatsApp Reminders",
+        "Online Payments (3% platform fee)",
         "Basic Reporting",
+        "Service-level & Staff-level Scheduling",
       ],
-      notIncluded: ["White Labeling", "API Access", "Dedicated Support"],
-      icon: <FaBuilding className="text-emerald-500" />,
-      buttonVariant: "primary",
+      notIncluded: ["White Label Domain", "Advanced Analytics", "API Access"],
       popular: true,
+      icon: <FaBuilding />,
+      buttonVariant: "primary",
     },
     {
       name: "Business",
-      description: "Powering established clinics & agencies",
-      monthlyPrice: 79,
-      yearlyPrice: 65,
+      description: "For established service organizations",
+      monthlyPrice: 1999,
+      yearlyPrice: 19999,
       features: [
         "Up to 20 Users",
+        "Unlimited Locations",
         "Everything in Growth",
+        "Custom Domain (White Label)",
         "Advanced Analytics",
-        "Payment Processing (0 fees)",
-        "White Label Booking Page",
-        "Priority Email Support",
+        "Priority Support",
+        "Reduced Payment Fee (2%)",
       ],
-      notIncluded: ["Custom Integrations", "SLA Guarantees"],
-      icon: <FaGem className="text-purple-500" />,
-      buttonVariant: "outline",
+      notIncluded: ["Custom Integrations", "Dedicated Account Manager"],
       popular: false,
+      icon: <FaGem />,
+      buttonVariant: "black",
     },
     {
       name: "Enterprise",
-      description: "Tailored for large organizations",
+      description: "Custom solutions for large organizations",
       monthlyPrice: "Custom",
       yearlyPrice: "Custom",
       features: [
         "Unlimited Users",
+        "Unlimited Locations",
         "Everything in Business",
-        "Dedicated Account Manager",
-        "SSO & Custom Security",
         "API Access & Webhooks",
-        "99.9% Uptime SLA",
+        "Dedicated Account Manager",
+        "Custom Integrations",
       ],
       notIncluded: [],
-      icon: <FaBuilding className="text-neutral-500" />,
-      buttonVariant: "black",
       popular: false,
+      icon: <FaBuilding />,
+      buttonVariant: "outline",
     },
   ];
 
@@ -180,12 +183,14 @@ export default function PricingPage() {
                 {typeof plan.monthlyPrice === "number" ? (
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold text-neutral-900">
-                      $
+                      Rs.
                       {billingCycle === "monthly"
                         ? plan.monthlyPrice
                         : plan.yearlyPrice}
                     </span>
-                    <span className="text-neutral-500">/mo</span>
+                    <span className="text-neutral-500">
+                      /{billingCycle === "monthly" ? "mo" : "yr"}
+                    </span>
                   </div>
                 ) : (
                   <div className="text-4xl font-bold text-neutral-900">
@@ -195,7 +200,7 @@ export default function PricingPage() {
                 {billingCycle === "yearly" &&
                   typeof plan.monthlyPrice === "number" && (
                     <div className="text-xs text-green-600 font-medium mt-1">
-                      Billed ${plan.yearlyPrice * 12} yearly
+                      Billed Rs. {plan.yearlyPrice} yearly
                     </div>
                   )}
               </div>
@@ -227,8 +232,8 @@ export default function PricingPage() {
                   plan.buttonVariant === "primary"
                     ? "bg-gradient-to-r from-primary-600 to-secondary-600 text-white hover:shadow-lg hover:from-primary-700 hover:to-secondary-700"
                     : plan.buttonVariant === "black"
-                    ? "bg-neutral-900 text-white hover:bg-neutral-800"
-                    : "bg-white border border-neutral-200 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
+                      ? "bg-neutral-900 text-white hover:bg-neutral-800"
+                      : "bg-white border border-neutral-200 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
                 }
               `}
               >

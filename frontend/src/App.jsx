@@ -6,6 +6,8 @@ import {
 } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import RegisterOrg from "./pages/auth/RegisterOrg";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import Dashboard from "./pages/dashboard/Dashboard";
 import BookingPage from "./pages/booking/BookingPage";
 import NotFound from "./pages/NotFound";
@@ -75,6 +77,8 @@ function App() {
             element={<Login isMainDomain={isMainDomain} />}
           />
           <Route path="/register" element={<RegisterOrg />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Public Booking */}
           <Route path="/book" element={<BookingPage />} />

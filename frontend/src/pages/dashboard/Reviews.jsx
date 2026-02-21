@@ -32,8 +32,8 @@ export default function Reviews() {
       const response = await axiosInstance.get("/organization/reviews", {
         params,
       });
-      setReviews(response.data.reviews || []);
-      setTotalPages(response.data.totalPages || 1);
+      setReviews(response.data.data.reviews || []);
+      setTotalPages(response.data.data.totalPages || 1);
     } catch (error) {
       console.error("Fetch Reviews Error:", error);
       showNotification({ type: "ERROR", message: "Failed to fetch reviews" });

@@ -3,31 +3,29 @@ const { OrgNotificationSettings } = require("../models");
 exports.getSettings = async (req, res) => {
   try {
     const orgId = req.orgId;
-    if (!orgId)
-      return res.status(400).json({ error: "Organization context required" });
+    if (!orgId) return res.badRequest(null, "Organization context required");
 
     let settings = await OrgNotificationSettings.findOne({ where: { orgId } });
     if (!settings) {
       // Return defaults
-      return res.json({
+      return res.successResponse({
         enableSMS: false,
         enableWhatsApp: false,
         whatsappTemplateId: "",
         senderId: "",
       });
     }
-    res.json(settings);
+    res.successResponse(settings);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch notification settings" });
+    res.serverError(error.message, "Failed to fetch notification settings");
   }
 };
 
 exports.updateSettings = async (req, res) => {
   try {
     const orgId = req.orgId;
-    if (!orgId)
-      return res.status(400).json({ error: "Organization context required" });
+    if (!orgId) return res.badRequest(null, "Organization context required");
 
     const { enableSMS, enableWhatsApp, senderId, whatsappTemplateId } =
       req.body;
@@ -49,9 +47,9 @@ exports.updateSettings = async (req, res) => {
         whatsappTemplateId,
       });
     }
-    res.json(settings);
+    res.successResponse(settings);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update settings" });
+    res.serverError(error.message, "Failed to update settings");
   }
 };

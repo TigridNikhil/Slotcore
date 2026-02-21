@@ -16,7 +16,9 @@ export const fetchPublicTenant = () => async (dispatch) => {
   dispatch(setLoading());
   try {
     const response = await axiosInstance.get("/organization/public");
-    dispatch(setTenant(response.data));
+    console.log(response.data);
+
+    dispatch(setTenant(response.data.data));
   } catch (error) {
     console.error("Fetch Tenant Error:", error);
     dispatch(setError("Organization not found or system unavailable."));
@@ -28,7 +30,7 @@ export const fetchPublicServices = () => async (dispatch) => {
   dispatch(setLoading());
   try {
     const response = await axiosInstance.get("/services");
-    dispatch(setServices(response.data));
+    dispatch(setServices(response.data.data));
   } catch (error) {
     console.error("Fetch Services Error:", error);
     dispatch(setError("Failed to load services."));
@@ -49,7 +51,7 @@ export const fetchPublicSlots = (date, serviceIdOrList) => async (dispatch) => {
     const response = await axiosInstance.get("/bookings/slots", {
       params,
     });
-    dispatch(setSlots(response.data.slots));
+    dispatch(setSlots(response.data.data.slots));
   } catch (error) {
     console.error("Fetch Slots Error:", error);
     dispatch(setError("Failed to load available slots."));
@@ -61,7 +63,7 @@ export const fetchPublicSlots = (date, serviceIdOrList) => async (dispatch) => {
 export const fetchPublicLocations = () => async (dispatch) => {
   try {
     const response = await axiosInstance.get("/locations");
-    dispatch(setLocations(response.data));
+    dispatch(setLocations(response.data.data));
   } catch (error) {
     console.error("Fetch Locations Error:", error);
     dispatch(setLocations([]));
@@ -85,7 +87,7 @@ export const createPublicBooking = (bookingData) => async (dispatch) => {
       // If 'Free' but online selected? If price is 0, backend sets paymentRequired: false.
       // So checking summary.paymentRequired === false covers free services too.
 
-      const booking = response.data.summary.bookings[0];
+      const booking = response.data.data.summary.bookings[0];
       dispatch(setCreatedBooking(booking));
       dispatch(setBookingSuccess(true));
       showNotification({ type: "SUCCESS", message: "Booking Confirmed!" });
@@ -113,7 +115,7 @@ export const cancelPublicBooking = (bookingIds, token) => async (dispatch) => {
         headers: {
           "x-booking-token": token,
         },
-      }
+      },
     );
     console.log("Booking batch cancelled successfully after dismissal");
   } catch (error) {

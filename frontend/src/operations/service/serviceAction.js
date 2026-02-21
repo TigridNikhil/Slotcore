@@ -14,7 +14,7 @@ export const getServices = () => async (dispatch) => {
   try {
     // API call automatically includes headers from baseurl interceptor
     const response = await axiosInstance.get("/services");
-    dispatch(setServices(response.data));
+    dispatch(setServices(response.data.data));
   } catch (error) {
     const errorMessage =
       error.response?.data?.error || "Failed to fetch services";
@@ -27,7 +27,7 @@ export const createService = (payload) => async (dispatch) => {
   dispatch(setLoading());
   try {
     const response = await axiosInstance.post("/services", payload);
-    dispatch(addService(response.data));
+    dispatch(addService(response.data.data));
     showNotification({
       type: "SUCCESS",
       message: "Service created successfully",
@@ -46,7 +46,7 @@ export const updateService = (id, payload) => async (dispatch) => {
   dispatch(setLoading());
   try {
     const response = await axiosInstance.put(`/services/${id}`, payload);
-    dispatch(updateServiceInStore(response.data));
+    dispatch(updateServiceInStore(response.data.data));
     showNotification({
       type: "SUCCESS",
       message: "Service updated successfully",

@@ -11,15 +11,6 @@ import { motion } from "framer-motion";
 export default function AIContentGenerator() {
   const dispatch = useDispatch();
   const { loading, successMessage, error } = useSelector((state) => state.ai);
-  // We need current content. For now we can fetch it via stats or assume it's in local storage?
-  // Let's rely on the public info fetch or we can fetch it on mount if we had an action for it.
-  // For simplicity, let's just use local state seeded with defaults,
-  // but ideally we should fetch 'getPublicInfo' again or have an 'getOrgSettings' action.
-  // Since we don't have a 'getOrgSettings' action readily available for the *dashboard* (admin view),
-  // we will implement a quick fetch or just use the generator.
-  // Actually, 'getDashboardStats' doesn't return content.
-  // Let's implement a quick useEffect to fetch current settings if we want to edit them.
-  // For this MVP step, let's focus on the *Generation* aspect which returns the data.
 
   const [contentData, setContentData] = useState({
     heroTagline: "",
@@ -51,7 +42,7 @@ export default function AIContentGenerator() {
 
   const handleGenerateServicesCallback = () => {
     const confirm = window.confirm(
-      "Make sure you added all services before generating service descriptions. Are you sure you want to generate service descriptions?"
+      "Make sure you added all services before generating service descriptions. Are you sure you want to generate service descriptions?",
     );
     if (!confirm) return;
     dispatch(generateServiceDescriptions(tone));

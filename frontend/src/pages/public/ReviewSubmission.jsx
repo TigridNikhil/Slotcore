@@ -27,7 +27,7 @@ export default function ReviewSubmission() {
       const res = await axiosInstance.get(
         `/marketplace/reviews/booking/${bookingId}`
       );
-      setBookingInfo(res.data);
+      setBookingInfo(res.data.data);
     } catch (err) {
       setError(err.response?.data?.error || "Invalid review link");
     } finally {

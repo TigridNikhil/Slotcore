@@ -17,10 +17,10 @@ exports.getOverrides = async (req, res) => {
       where,
       order: [["date", "ASC"]],
     });
-    res.json(overrides);
+    res.successResponse(overrides);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error fetching overrides" });
+    res.serverError(error.message, "Error fetching overrides");
   }
 };
 
@@ -28,12 +28,12 @@ exports.getOverrides = async (req, res) => {
 exports.createOverride = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
+      return res.forbidden(null, "Admin access required");
     }
 
     const { date, startTime, endTime, isOff } = req.body;
     if (!date) {
-      return res.status(400).json({ error: "Date is required" });
+      return res.badRequest("Date is required");
     }
 
     const override = await AvailabilityOverride.create({
@@ -44,10 +44,10 @@ exports.createOverride = async (req, res) => {
       isOff: isOff || false,
     });
 
-    res.status(201).json(override);
+    res.status(201).successResponse(override);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error creating override" });
+    res.serverError(error.message, "Error creating override");
   }
 };
 
@@ -55,7 +55,7 @@ exports.createOverride = async (req, res) => {
 exports.deleteOverride = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
+      return res.forbidden(null, "Admin access required");
     }
 
     const { id } = req.params;
@@ -63,11 +63,11 @@ exports.deleteOverride = async (req, res) => {
       where: { id, orgId: req.orgId },
     });
 
-    if (!deleted) return res.status(404).json({ error: "Override not found" });
+    if (!deleted) return res.notFound("Override not found");
 
-    res.json({ message: "Override deleted" });
+    res.successResponse(null, "Override deleted");
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error deleting override" });
+    res.serverError(error.message, "Error deleting override");
   }
 };

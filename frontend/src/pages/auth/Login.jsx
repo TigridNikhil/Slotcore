@@ -31,25 +31,16 @@ export default function Login({ isMainDomain }) {
   const dispatch = useDispatch();
   const { loading, error, user } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    if (user) {
-      if (localStorage.getItem("isNewPass")) {
-        // Handle password reset flow if needed
-      }
-      navigate("/dashboard");
-    }
-    return () => {
-      dispatch(clearError());
-    };
-  }, [user, navigate, dispatch]);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(loginUser(formData));
+    const res = dispatch(loginUser(formData));
+    if (res.success) {
+      navigate("/dashboard");
+    }
   };
 
   return (

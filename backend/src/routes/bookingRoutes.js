@@ -87,7 +87,7 @@ const requireBookingPermission = (req, res, next) => {
     }
   }
 
-  return res.status(401).json({ error: "Unauthorized access to booking" });
+  return res.unauthorized(null, "Unauthorized access to booking");
 };
 
 // Public endpoints (Client Booking Flow)

@@ -12,7 +12,6 @@ const {
 const emailService = require("../services/emailService");
 const { Op } = require("sequelize");
 const { generateLedgerTestData } = require("../utils/mockLedgerData");
-// const notificationService = require("../services/notificationService"); // To be implemented
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -26,7 +25,7 @@ exports.createOrder = async (req, res) => {
     const targetIds = bookingIds || (bookingId ? [bookingId] : []);
 
     if (targetIds.length === 0) {
-      return res.status(400).json({ error: "Booking ID(s) required" });
+      return res.badRequest("Booking ID(s) required");
     }
 
     const bookings = await Booking.findAll({
@@ -34,7 +33,7 @@ exports.createOrder = async (req, res) => {
     });
 
     if (bookings.length === 0) {
-      return res.status(404).json({ error: "Bookings not found" });
+      return res.notFound("Bookings not found");
     }
 
     // Calculate total amount
@@ -44,7 +43,7 @@ exports.createOrder = async (req, res) => {
     }
 
     if (totalAmount <= 0) {
-      return res.status(400).json({ error: "Invalid total payment amount" });
+      return res.badRequest("Invalid total payment amount");
     }
 
     const options = {
@@ -62,23 +61,22 @@ exports.createOrder = async (req, res) => {
     // Update ALL Bookings with Order ID
     await Booking.update(
       { razorpayOrderId: order.id },
-      { where: { id: targetIds } }
+      { where: { id: targetIds } },
     );
 
-    res.json({
-      success: true,
+    res.successResponse({
       order_id: order.id,
       amount: totalAmount,
       currency: "INR",
       key_id: process.env.RAZORPAY_KEY_ID,
-      booking_ids: targetIds, // Return list
+      booking_ids: targetIds,
       customer_name: bookings[0].customerName, // Assume same customer
       customer_email: bookings[0].customerEmail,
       customer_contact: bookings[0].customerMobile,
     });
   } catch (error) {
     console.error("Create Order Error:", error);
-    res.status(500).json({ error: "Failed to create payment order" });
+    res.serverError(error.message, "Failed to create payment order");
   }
 };
 
@@ -97,7 +95,7 @@ exports.verifyPayment = async (req, res) => {
 
     if (expectedSignature !== razorpay_signature) {
       await t.rollback();
-      return res.status(400).json({ error: "Invalid signature" });
+      return res.badRequest("Invalid signature");
     }
 
     // 2. Find Bookings (plural)
@@ -108,9 +106,7 @@ exports.verifyPayment = async (req, res) => {
 
     if (bookings.length === 0) {
       await t.rollback();
-      return res
-        .status(404)
-        .json({ error: "Bookings not found for this order" });
+      return res.notFound("Bookings not found for this order");
     }
 
     // Process each booking
@@ -130,14 +126,12 @@ exports.verifyPayment = async (req, res) => {
           status: "paid",
           method: "online",
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       // 4. Commission Logic
       const grossAmount = parseFloat(booking.paymentAmount || 0);
 
-      // Fetch Org Commission Settings (Optimized: fetching inside loop, could be cached if same org)
-      // Assuming all bookings same org
       const commissionSettings = await PlatformCommission.findOne({
         where: { orgId: booking.orgId },
         transaction: t,
@@ -174,7 +168,7 @@ exports.verifyPayment = async (req, res) => {
           platformCommissionAmount: platformFee,
           vendorReceivableAmount: vendorNet,
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       // 6. Create Vendor Ledger Entry
@@ -187,20 +181,15 @@ exports.verifyPayment = async (req, res) => {
           netAmount: vendorNet,
           status: "UNPAID",
         },
-        { transaction: t }
+        { transaction: t },
       );
     }
 
     await t.commit();
 
-    res.json({
-      success: true,
-      message: "Payment verified and bookings confirmed",
-    });
+    res.successResponse(null, "Payment verified and bookings confirmed");
 
     // 7. Post-Transaction Notifications (Non-blocking)
-    // Send Email for EACH booking? Or grouped?
-    // Existing logic sends 1 email per booking usually.
     bookings.forEach(async (booking) => {
       try {
         const srv = await booking.getService();
@@ -214,7 +203,7 @@ exports.verifyPayment = async (req, res) => {
   } catch (error) {
     console.error("Verify Payment Error:", error);
     if (t && !t.finished) await t.rollback();
-    res.status(500).json({ error: "Payment verification failed" });
+    res.serverError(error.message, "Payment verification failed");
   }
 };
 
@@ -222,7 +211,7 @@ exports.getOrgPayments = async (req, res) => {
   try {
     const orgId = req.orgId; // From authMiddleware
     if (!orgId) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const { page = 1, limit = 20 } = req.query;
@@ -241,14 +230,14 @@ exports.getOrgPayments = async (req, res) => {
       ],
     });
 
-    res.json({
+    res.successResponse({
       payments: rows,
       totalPages: Math.ceil(count / limit),
       currentPage: parseInt(page),
     });
   } catch (error) {
     console.error("Get Org Payments Error:", error);
-    res.status(500).json({ error: "Failed to fetch payments" });
+    res.serverError(error.message, "Failed to fetch payments");
   }
 };
 
@@ -317,7 +306,7 @@ exports.exportLedger = async (req, res) => {
     res.send(csvContent);
   } catch (error) {
     console.error("CSV Export Error:", error);
-    res.status(500).json({ error: "Failed to export CSV" });
+    res.serverError(error.message, "Failed to export CSV");
   }
 };
 
@@ -327,28 +316,28 @@ exports.sendSettlementReminder = async (req, res) => {
     const ledger = await VendorLedger.findByPk(id);
 
     if (!ledger) {
-      return res.status(404).json({ error: "Ledger entry not found" });
+      return res.notFound("Ledger entry not found");
     }
 
     if (ledger.status === "SETTLED") {
-      return res.status(400).json({ error: "Already settled" });
+      return res.badRequest("Already settled");
     }
 
     if (ledger.settlementDirection !== "VENDOR_PAYS_PLATFORM") {
-      return res.status(400).json({ error: "Reminder only for vendor debts" });
+      return res.badRequest("Reminder only for vendor debts");
     }
 
     const org = await Organization.findByPk(ledger.orgId);
     if (!org) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     await emailService.sendSettlementReminder(org, ledger, ledger.netAmount);
 
-    res.json({ success: true, message: "Reminder sent successfully" });
+    res.successResponse(null, "Reminder sent successfully");
   } catch (error) {
     console.error("Reminder Error:", error);
-    res.status(500).json({ error: "Failed to send reminder" });
+    res.serverError(error.message, "Failed to send reminder");
   }
 };
 
@@ -358,7 +347,7 @@ exports.sendTotalSettlementReminder = async (req, res) => {
     const org = await Organization.findByPk(orgId);
 
     if (!org) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     // Calculate total pending
@@ -373,27 +362,27 @@ exports.sendTotalSettlementReminder = async (req, res) => {
     });
 
     if (transactions.length === 0) {
-      return res.status(400).json({ error: "No pending settlements found" });
+      return res.badRequest("No pending settlements found");
     }
 
     const totalDue = transactions.reduce(
       (sum, t) => sum + parseFloat(t.netAmount),
-      0
+      0,
     );
 
     await emailService.sendMonthlySettlementReminder(
       org,
       totalDue.toFixed(2),
-      transactions.length
+      transactions.length,
     );
 
-    res.json({
-      success: true,
-      message: `Total reminder sent for ₹${totalDue.toFixed(2)}`,
-    });
+    res.successResponse(
+      null,
+      `Total reminder sent for ₹${totalDue.toFixed(2)}`,
+    );
   } catch (error) {
     console.error("Total Reminder Error:", error);
-    res.status(500).json({ error: "Failed to send total reminder" });
+    res.serverError(error.message, "Failed to send total reminder");
   }
 };
 
@@ -405,7 +394,7 @@ exports.generateMonthlyInvoice = async (req, res) => {
     let targetOrgId = orgId;
     if (orgId === "current") {
       if (!req.user || !req.user.orgId) {
-        return res.status(400).json({ error: "User organization not found" });
+        return res.badRequest("User organization not found");
       }
       targetOrgId = req.user.orgId;
     }
@@ -416,7 +405,7 @@ exports.generateMonthlyInvoice = async (req, res) => {
       req.user.role !== "super_admin" &&
       req.user.orgId !== targetOrgId
     ) {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res.forbidden(null, "Unauthorized");
     }
 
     const start = new Date(year, month - 1, 1);
@@ -426,15 +415,12 @@ exports.generateMonthlyInvoice = async (req, res) => {
       where: {
         orgId: targetOrgId,
         createdAt: { [Op.between]: [start, end] },
-        // Invoice ALL commissions for the period, even if already deducted
-        // This ensures the "Tax Invoice" cover the full platform fee revenue.
-        // settlementDirection: "VENDOR_PAYS_PLATFORM",
       },
     });
 
     const totalCommission = transactions.reduce(
       (sum, t) => sum + parseFloat(t.platformCommission),
-      0
+      0,
     );
 
     // Fetch Org Details for Name
@@ -455,16 +441,13 @@ exports.generateMonthlyInvoice = async (req, res) => {
       ],
     };
 
-    // If detail needed, we can loop transactions.
-    // For now, summary invoice.
-
     const invoiceService = require("../services/invoiceService");
 
     await invoiceService.createInvoice(invoiceData, res);
   } catch (error) {
     console.error("Invoice Error:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: "Failed to generate invoice" });
+      res.serverError(error.message, "Failed to generate invoice");
     }
   }
 };
@@ -473,17 +456,13 @@ exports.getLedger = async (req, res) => {
   try {
     const whereClause = {};
     if (req.user && req.user.role === "super_admin") {
-      // Admin can view any org's ledger if orgId is provided
       if (req.query.orgId) {
         whereClause.orgId = req.query.orgId;
       }
-      // If no orgId, maybe view all? Or restricted? Let's require orgId for now or show all.
-      // For Admin Org Details page, we will pass orgId.
     } else if (req.orgId) {
-      // Vendor viewing their own
       whereClause.orgId = req.orgId;
     } else {
-      return res.status(403).json({ error: "Unauthorized access to ledger" });
+      return res.forbidden(null, "Unauthorized access to ledger");
     }
 
     const { page = 1, limit = 20 } = req.query;
@@ -532,7 +511,7 @@ exports.getLedger = async (req, res) => {
         },
       })) || 0;
 
-    res.json({
+    res.successResponse({
       transactions: rows,
       totalPages: Math.ceil(count / limit),
       currentPage: parseInt(page),
@@ -546,7 +525,7 @@ exports.getLedger = async (req, res) => {
     });
   } catch (error) {
     console.error("Failed to fetch ledger", error);
-    res.status(500).json({ error: "Failed to fetch ledger" });
+    res.serverError(error.message, "Failed to fetch ledger");
   }
 };
 
@@ -558,19 +537,19 @@ exports.markSettled = async (req, res) => {
     // 1. Auth Check (Super Admin only usually)
     if (!req.user || req.user.role !== "super_admin") {
       await t.rollback();
-      return res.status(403).json({ error: "Unauthorized: Admins only" });
+      return res.forbidden(null, "Unauthorized: Admins only");
     }
 
     // 2. Find Ledger Entry
     const ledger = await VendorLedger.findByPk(id, { transaction: t });
     if (!ledger) {
       await t.rollback();
-      return res.status(404).json({ error: "Ledger entry not found" });
+      return res.notFound("Ledger entry not found");
     }
 
     if (ledger.status === "SETTLED") {
       await t.rollback();
-      return res.status(400).json({ error: "Already settled" });
+      return res.badRequest("Already settled");
     }
 
     // 3. Mark as Settled
@@ -586,11 +565,11 @@ exports.markSettled = async (req, res) => {
     });
 
     await t.commit();
-    res.json({ success: true, message: "Payout marked as paid", ledger });
+    res.successResponse(ledger, "Payout marked as settled");
   } catch (error) {
     console.error("Payout Valid Error:", error);
     if (t && !t.finished) await t.rollback();
-    res.status(500).json({ error: "Failed to update payout status" });
+    res.serverError(error.message, "Failed to update payout status");
   }
 };
 
@@ -601,7 +580,7 @@ exports.exportLedgerPdf = async (req, res) => {
     // Fetch Org
     const org = await Organization.findByPk(orgId);
     if (!org) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     // Fetch All Transactions for Ledger
@@ -662,14 +641,12 @@ exports.exportLedgerPdf = async (req, res) => {
       })),
     };
 
-    // const data = generateLedgerTestData(55); // 50+ rows // test
-
     const invoiceService = require("../services/invoiceService");
     await invoiceService.createLedgerPdf(pdfData, res);
   } catch (error) {
     console.error("Ledger PDF Controller Error:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: "Failed to export ledger PDF" });
+      res.serverError(error.message, "Failed to export ledger PDF");
     }
   }
 };

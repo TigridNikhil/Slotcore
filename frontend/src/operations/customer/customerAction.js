@@ -15,7 +15,7 @@ export const fetchCustomers =
     try {
       const params = { page, search };
       const response = await axiosInstance.get("/customers", { params });
-      dispatch(setCustomers(response.data));
+      dispatch(setCustomers(response.data.data));
     } catch (error) {
       const errorMessage =
         error.response?.data?.error || "Failed to fetch customers";
@@ -28,7 +28,7 @@ export const fetchCustomerDetails = (id) => async (dispatch) => {
   dispatch(setLoading());
   try {
     const response = await axiosInstance.get(`/customers/${id}`);
-    dispatch(setCustomerDetails(response.data));
+    dispatch(setCustomerDetails(response.data.data));
   } catch (error) {
     const errorMessage =
       error.response?.data?.error || "Failed to fetch customer details";
@@ -39,7 +39,7 @@ export const fetchCustomerDetails = (id) => async (dispatch) => {
 export const updateCustomer = (id, payload) => async (dispatch) => {
   try {
     const response = await axiosInstance.put(`/customers/${id}`, payload);
-    dispatch(updateCustomerInList(response.data));
+    dispatch(updateCustomerInList(response.data.data));
     showNotification({
       type: "SUCCESS",
       message: "Customer updated successfully",

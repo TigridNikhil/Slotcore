@@ -12,39 +12,22 @@ exports.submitReview = async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.notFound("Booking not found");
     }
 
     if (booking.status !== "completed") {
-      return res
-        .status(400)
-        .json({ error: "You can only review completed bookings" });
+      return res.badRequest("You can only review completed bookings");
     }
 
     // 2. Check for existing review
     const existingReview = await Review.findOne({ where: { bookingId } });
     if (existingReview) {
-      return res
-        .status(400)
-        .json({ error: "You have already reviewed this booking" });
+      return res.badRequest("You have already reviewed this booking");
     }
 
     // 3. Create Review
-    // We infer organization from booking staff or create direct link if we stored orgId on booking
-    // Currently Booking doesn't have orgId directly, but Organization has many Bookings.
-    // Let's fetch the orgId via association or inference.
-    // Wait, Organization <-> Booking relationship exists. Booking belongsTo Organization.
-    // Let's verify if booking can include organization.
-
-    // In models/index.js: Booking.belongsTo(Organization, { foreignKey: "orgId" });
-    // So booking instance should have orgId if it was fetched with attributes, or just booking.orgId if column exists.
-
-    // Safety check if orgId is present
     if (!booking.orgId) {
-      // Fallback: This shouldn't happen in a valid system
-      return res
-        .status(500)
-        .json({ error: "Booking not linked to an organization" });
+      return res.serverError(null, "Booking not linked to an organization");
     }
 
     const review = await Review.create({
@@ -57,12 +40,10 @@ exports.submitReview = async (req, res) => {
       status: "PENDING", // Default to pending
     });
 
-    res
-      .status(201)
-      .json({ message: "Review submitted for moderation", review });
+    res.status(201).successResponse(review, "Review submitted for moderation");
   } catch (error) {
     console.error("Submit Review Error:", error);
-    res.status(500).json({ error: "Failed to submit review" });
+    res.serverError(error.message, "Failed to submit review");
   }
 };
 
@@ -76,13 +57,10 @@ exports.getBookingInfoForReview = async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.notFound("Booking not found");
     }
 
-    // Basic security: Don't leak too much info if bookingId is guessed, but it's UUID.
-    // Also, usually we'd verify a token, but for this simplified flow, UUID is the "token".
-
-    res.json({
+    res.successResponse({
       customerName: booking.customerName.split(" ")[0], // First Name
       organization: booking.Organization
         ? {
@@ -95,7 +73,7 @@ exports.getBookingInfoForReview = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Booking Info Error:", error);
-    res.status(500).json({ error: "Failed to fetch booking info" });
+    res.serverError(error.message, "Failed to fetch booking info");
   }
 };
 
@@ -117,7 +95,7 @@ exports.getOrgReviews = async (req, res) => {
       attributes: ["id", "rating", "comment", "reviewerName", "createdAt"],
     });
 
-    res.json({
+    res.successResponse({
       reviews: rows,
       total: count,
       totalPages: Math.ceil(count / limit),
@@ -125,7 +103,7 @@ exports.getOrgReviews = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Reviews Error:", error);
-    res.status(500).json({ error: "Failed to fetch reviews" });
+    res.serverError(error.message, "Failed to fetch reviews");
   }
 };
 
@@ -144,13 +122,9 @@ exports.getVendorReviews = async (req, res) => {
       order: [["createdAt", "DESC"]],
       limit: parseInt(limit),
       offset: parseInt(offset),
-      // Include Booking info to show who reviewed
-      // Note: Booking might not be directly associated in model definition if we didn't add it.
-      // But usually we do. Let's check if we can include Booking.
-      // Usually Review belongsTo Booking.
     });
 
-    res.json({
+    res.successResponse({
       reviews: rows,
       total: count,
       totalPages: Math.ceil(count / limit),
@@ -158,7 +132,7 @@ exports.getVendorReviews = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Vendor Reviews Error:", error);
-    res.status(500).json({ error: "Failed to fetch vendor reviews" });
+    res.serverError(error.message, "Failed to fetch vendor reviews");
   }
 };
 
@@ -173,17 +147,14 @@ exports.listReviews = async (req, res) => {
 
     const reviews = await Review.findAll({
       where,
-      include: [
-        { model: Organization, attributes: ["name"] },
-        // { model: Booking, attributes: ["customerName", "serviceId"] } // If needed
-      ],
+      include: [{ model: Organization, attributes: ["name"] }],
       order: [["createdAt", "DESC"]],
     });
 
-    res.json(reviews);
+    res.successResponse(reviews);
   } catch (error) {
     console.error("List Admin Reviews Error:", error);
-    res.status(500).json({ error: "Failed to list reviews" });
+    res.serverError(error.message, "Failed to list reviews");
   }
 };
 
@@ -195,13 +166,14 @@ exports.moderateReview = async (req, res) => {
     const { action } = req.body; // "APPROVE" or "REJECT"
 
     if (!["APPROVE", "REJECT"].includes(action)) {
-      return res.status(400).json({ error: "Invalid action" });
+      await transaction.rollback();
+      return res.badRequest("Invalid action");
     }
 
     const review = await Review.findByPk(id);
     if (!review) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Review not found" });
+      return res.notFound("Review not found");
     }
 
     const startStatus = review.status;
@@ -209,24 +181,26 @@ exports.moderateReview = async (req, res) => {
 
     if (startStatus === targetStatus) {
       await transaction.rollback();
-      return res.json({ message: "Status already set" });
+      return res.successResponse(
+        { status: review.status },
+        "Status already set",
+      );
     }
 
     review.status = targetStatus;
     await review.save({ transaction });
 
     // Aggregation Logic: Only re-calc if we are interacting with APPROVED state
-    // If transferring FROM Approved OR TO Approved, we need recalc.
     if (startStatus === "APPROVED" || targetStatus === "APPROVED") {
       await updateOrgRating(review.organizationId, transaction);
     }
 
     await transaction.commit();
-    res.json({ success: true, status: review.status });
+    res.successResponse({ success: true, status: review.status });
   } catch (error) {
     await transaction.rollback();
     console.error("Moderation Error:", error);
-    res.status(500).json({ error: "Moderation failed" });
+    res.serverError(error.message, "Moderation failed");
   }
 };
 
@@ -247,6 +221,6 @@ async function updateOrgRating(orgId, transaction) {
 
   await Organization.update(
     { averageRating: avg.toFixed(1), totalReviews: total },
-    { where: { id: orgId }, transaction }
+    { where: { id: orgId }, transaction },
   );
 }

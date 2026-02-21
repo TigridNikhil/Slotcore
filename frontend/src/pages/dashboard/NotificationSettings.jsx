@@ -20,7 +20,7 @@ export default function NotificationSettings() {
   const fetchSettings = async () => {
     try {
       const res = await axiosInstance.get("/notifications/settings");
-      setSettings(res.data);
+      setSettings(res.data.data);
     } catch (error) {
       console.error(error);
       showNotification({ type: "ERROR", message: "Failed to load settings" });

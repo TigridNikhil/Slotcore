@@ -34,7 +34,7 @@ exports.registerOrganization = async (req, res) => {
 
     // 1. Validation
     if (!orgName || !email || !password) {
-      return res.status(400).json({ error: "Missing required fields" });
+      return res.badRequest("Missing required fields");
     }
 
     // 2. Slug Generation
@@ -74,28 +74,36 @@ exports.registerOrganization = async (req, res) => {
 
     await t.commit();
 
-    // 6. Generate Token
-    const token = jwt.sign(
+    const accesstoken = jwt.sign(
       { userId: user.id, orgId: organization.id, role: user.role },
       process.env.JWT_SECRET || "secret_dev_key",
       { expiresIn: "1d" },
     );
 
-    res.status(201).json({
-      message: "Organization created successfully",
-      token,
-      organization: {
-        id: organization.id,
-        name: organization.name,
-        slug: organization.slug,
-        subdomain: `${organization.slug}.slotcore.com`, // Frontend hint
+    const refreshtoken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET || "refresh_secret_dev_key",
+      { expiresIn: "7d" },
+    );
+
+    res.status(201).successResponse(
+      {
+        accesstoken,
+        refreshtoken,
+        organization: {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          subdomain: `${organization.slug}.slotcore.com`, // Frontend hint
+        },
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
       },
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
-    });
+      "Organization created successfully",
+    );
   } catch (error) {
     await t.rollback();
     console.error("Registration Error:", error);
@@ -103,12 +111,14 @@ exports.registerOrganization = async (req, res) => {
     // Handle uniqueness constraint violation explicitly if needed
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(409).json({
+        success: false,
+        message: "Email already exists",
         error:
           "Email already exists in this organization (or globally if enforced).",
       });
     }
 
-    res.status(500).json({ error: "Internal Server Error" });
+    res.serverError(error.message);
   }
 };
 
@@ -117,7 +127,7 @@ exports.login = async (req, res) => {
     const { email, password, slug } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return res.badRequest("Email and password are required");
     }
 
     // 1. Resolve Organization
@@ -127,16 +137,17 @@ exports.login = async (req, res) => {
     if (!orgId && slug) {
       const org = await Organization.findOne({ where: { slug } });
       if (!org) {
-        return res.status(404).json({ error: "Organization not found" });
+        return res.notFound("Organization not found");
       }
       orgId = org.id;
     }
 
     // If still no org, fails (for MVP, generic login not supported without org context)
     if (!orgId) {
-      return res.status(400).json({
-        error: "Organization Identifier (slug) is required for login.",
-      });
+      return res.badRequest(
+        null,
+        "Organization Identifier (slug) is required for login.",
+      );
     }
 
     // 2. Find User in Org
@@ -145,17 +156,17 @@ exports.login = async (req, res) => {
       include: [{ model: Organization, attributes: ["slug", "name"] }],
     });
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.badRequest("Invalid credentials");
     }
 
     // 3. Verify Password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.badRequest("Invalid credentials");
     }
 
-    // 4. Generate Token
-    const token = jwt.sign(
+    // 4. Generate Tokens
+    const accesstoken = jwt.sign(
       {
         userId: user.id,
         orgId: user.orgId,
@@ -166,21 +177,159 @@ exports.login = async (req, res) => {
       { expiresIn: "1d" },
     );
 
-    res.json({
-      message: "Login successful",
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        orgId: user.orgId,
-        slug: user.Organization?.slug, // Return slug
-        orgName: user.Organization?.name,
+    const refreshtoken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET || "refresh_secret_dev_key",
+      { expiresIn: "7d" },
+    );
+
+    res.successResponse(
+      {
+        accesstoken,
+        refreshtoken,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          orgId: user.orgId,
+          slug: user.Organization?.slug, // Return slug
+          orgName: user.Organization?.name,
+        },
       },
-    });
+      "Login successful",
+    );
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.serverError(error.message);
+  }
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.unauthorized(null, "Refresh token is required");
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET || "refresh_secret_dev_key",
+    );
+
+    // Find user
+    const user = await User.findByPk(decoded.userId, {
+      include: [{ model: Organization, attributes: ["id", "slug", "name"] }],
+    });
+
+    if (!user) {
+      return res.unauthorized(null, "User not found or inactive");
+    }
+
+    // Generate new access token
+    const accesstoken = jwt.sign(
+      {
+        userId: user.id,
+        orgId: user.orgId,
+        role: user.role,
+        email: user.email,
+      },
+      process.env.JWT_SECRET || "secret_dev_key",
+      { expiresIn: "1h" }, // Access token short-lived
+    );
+
+    // Generate new refresh token (Rotate)
+    const refreshtoken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET || "refresh_secret_dev_key",
+      { expiresIn: "7d" },
+    );
+
+    res.successResponse({
+      accesstoken,
+      refreshtoken,
+    });
+  } catch (error) {
+    console.error("Refresh Token Error:", error);
+    res.unauthorized(null, "Invalid or expired refresh token");
+  }
+};
+
+exports.forgotPasswordRequest = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.badRequest("Email is required");
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      // For security, don't confirm if user exists or not
+      return res.successResponse(
+        null,
+        "If an account exists with this email, you will receive an OTP.",
+      );
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    user.otp = otp;
+    user.otpExpiresAt = otpExpiresAt;
+    await user.save();
+
+    const emailService = require("../services/emailService");
+    const sent = await emailService.sendForgotPasswordOtp(email, otp);
+
+    if (!sent) {
+      return res.serverError(null, "Failed to send reset email");
+    }
+
+    res.successResponse(
+      null,
+      "If an account exists with this email, you will receive an OTP.",
+    );
+  } catch (error) {
+    console.error("Forgot Password Request Error:", error);
+    res.serverError(error.message);
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.badRequest("Email, OTP and new password are required");
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      return res.notFound("User not found");
+    }
+
+    if (user.otp !== otp || new Date() > user.otpExpiresAt) {
+      return res.unauthorized(null, "Invalid or expired OTP");
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    user.passwordHash = passwordHash;
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await user.save();
+
+    res.successResponse(null, "Password reset successful. You can now login.");
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.serverError(error.message);
   }
 };

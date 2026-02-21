@@ -20,6 +20,8 @@ const publicBookingSlice = createSlice({
       state.error = null;
     },
     setTenant: (state, action) => {
+      console.log("action", action);
+
       state.tenant = action.payload;
       state.loading = false;
     },

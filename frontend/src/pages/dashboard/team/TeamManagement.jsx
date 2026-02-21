@@ -42,7 +42,7 @@ const TeamManagement = () => {
   const fetchTeam = async () => {
     try {
       const res = await axiosInstance.get("/organization/team");
-      setTeam(res.data);
+      setTeam(res.data.data);
     } catch (error) {
       console.error("Failed to fetch team", error);
     } finally {

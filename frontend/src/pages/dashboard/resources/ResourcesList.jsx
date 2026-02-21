@@ -17,7 +17,7 @@ export default function ResourcesList() {
     try {
       setLoading(true);
       const res = await axiosInstance.get("/resources");
-      setResources(res.data);
+      setResources(res.data.data);
     } catch (error) {
       console.error("Failed to fetch resources", error);
     } finally {

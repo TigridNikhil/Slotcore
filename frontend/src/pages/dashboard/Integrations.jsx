@@ -16,7 +16,7 @@ export default function Integrations() {
   const fetchIntegrations = async () => {
     try {
       const response = await axiosInstance.get("/integrations");
-      setIntegrations(response.data);
+      setIntegrations(response.data.data);
     } catch (err) {
       console.error("Failed to fetch integrations", err);
       // setError("Could not load integrations");
@@ -35,7 +35,7 @@ export default function Integrations() {
       const response = await axiosInstance.get(
         `/integrations/${provider}/auth-url`
       );
-      const { url } = response.data;
+      const { url } = response.data.data;
       // 2. Redirect
       window.location.href = url;
     } catch (err) {

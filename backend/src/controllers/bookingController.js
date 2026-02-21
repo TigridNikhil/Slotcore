@@ -19,41 +19,6 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const fs = require("fs");
 
-exports.listUserBookings = async (req, res) => {
-  try {
-    const userEmail = req.user.email;
-    const { page = 1, limit = 10, status, date } = req.query; // Get date
-    // ... basic validation ...
-
-    if (!userEmail) {
-      return res.status(400).json({ error: "User email not found in token" });
-    }
-
-    const whereClause = {
-      customerEmail: userEmail,
-      orgId: req.orgId,
-    };
-
-    if (status && status !== "all") {
-      whereClause.status = status;
-    }
-
-    if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      whereClause.startTime = {
-        [Op.between]: [startOfDay, endOfDay],
-      };
-    }
-  } catch (error) {
-    console.error("Error listing user bookings:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
 exports.getAvailableSlots = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -64,7 +29,7 @@ exports.getAvailableSlots = async (req, res) => {
     const { date, serviceId, serviceIds } = req.query;
 
     if (!date || (!serviceId && !serviceIds)) {
-      return res.status(400).json({ error: "Date and Service ID(s) required" });
+      return res.badRequest("Date and Service ID(s) required");
     }
 
     // 1. Fetch Services to get total duration
@@ -88,8 +53,7 @@ exports.getAvailableSlots = async (req, res) => {
       }
     }
 
-    if (services.length === 0)
-      return res.status(404).json({ error: "Service(s) not found" });
+    if (services.length === 0) return res.notFound("Service(s) not found");
 
     // Use primary service for rules (first one)
     const primaryService = services[0];
@@ -225,7 +189,7 @@ exports.getAvailableSlots = async (req, res) => {
     // Wait, if specific override exists, it rules. If generic exists, it rules.
     // If NO override, use schedule.
     if (isOrgOff) {
-      return res.json({ date, slots: [] });
+      return res.successResponse({ date, slots: [] });
     }
 
     // 3. Fetch General Bookings (Legacy or generic)
@@ -249,7 +213,7 @@ exports.getAvailableSlots = async (req, res) => {
     } else if (staffResources.length === 0) {
       // Staff assigned, but no one is working today (empty resources)
       // Return empty slots immediately
-      return res.json({ date, slots: [] });
+      return res.successResponse({ date, slots: [] });
     }
 
     // 4. Generate Slots
@@ -269,7 +233,7 @@ exports.getAvailableSlots = async (req, res) => {
     });
 
     if (maxBookings && totalServiceBookings >= maxBookings) {
-      return res.json({ date, slots: [] });
+      return res.successResponse({ date, slots: [] });
     }
 
     const slots = generateSlots(
@@ -284,10 +248,10 @@ exports.getAvailableSlots = async (req, res) => {
       staffResources, // NEW: specific Staff Resources
     );
 
-    res.json({ date, slots });
+    res.successResponse({ date, slots });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error fetching slots" });
+    res.serverError(error.message, "Error fetching slots");
   }
 };
 
@@ -323,7 +287,7 @@ exports.createBooking = async (req, res) => {
 
     if (services.length !== targetServiceIds.length) {
       await t.rollback();
-      return res.status(404).json({ error: "One or more services not found" });
+      return res.notFound("One or more services not found");
     }
 
     // Determine Org ID (robustly)
@@ -444,7 +408,7 @@ exports.createBooking = async (req, res) => {
             await t.rollback();
             return res
               .status(409)
-              .json({ error: `Resource unavailable: ${resource.name}` });
+              .successResponse(null, `Resource unavailable: ${resource.name}`);
           }
         }
       }
@@ -487,7 +451,7 @@ exports.createBooking = async (req, res) => {
         const slotCapacity = srv.capacity || 1;
         if (existingCount >= slotCapacity) {
           await t.rollback();
-          return res.status(409).json({ error: "Slot is fully booked" });
+          return res.status(409).successResponse(null, "Slot is fully booked");
         }
       }
 
@@ -606,8 +570,7 @@ exports.createBooking = async (req, res) => {
       { expiresIn: "1h" },
     );
 
-    res.status(201).json({
-      success: true,
+    res.status(201).successResponse({
       bookingToken, // Return token
       summary: {
         paymentRequired: isPaymentRequired,
@@ -615,9 +578,6 @@ exports.createBooking = async (req, res) => {
         currency: "INR", // Assuming default for now
         bookings: createdBookings.map((cb) => cb.booking),
       },
-      // Legacy support (return first booking logic?)
-      // Frontends might expect object.
-      // We wrap in object.
       message: isPaymentRequired
         ? "Payment required to confirm."
         : "Booking confirmed.",
@@ -651,7 +611,7 @@ exports.createBooking = async (req, res) => {
     if (t && !t.finished) await t.rollback();
     console.error("Create Booking Error:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: "Error creating booking" });
+      res.serverError(error.message, "Error creating booking");
     }
   }
 };
@@ -666,7 +626,7 @@ exports.listBookings = async (req, res) => {
         req.user.role !== "org_admin" &&
         req.user.role !== "staff")
     ) {
-      return res.status(403).json({ error: "Access denied" });
+      return res.forbidden(null, "Access denied");
     }
 
     const { startDate, endDate, status, page = 1, limit = 10 } = req.query;
@@ -677,7 +637,7 @@ exports.listBookings = async (req, res) => {
     if (req.user.role === "staff") {
       if (!req.user.userId) {
         console.error("Staff user missing userId in request context");
-        return res.status(400).json({ error: "Staff ID missing" });
+        return res.badRequest("Staff ID missing");
       }
       whereClause.staffId = req.user.userId;
       console.log(`[ListBookings] Staff Filter Applied: ${req.user.userId}`);
@@ -721,7 +681,7 @@ exports.listBookings = async (req, res) => {
       offset: offset,
     });
 
-    res.json({
+    res.successResponse({
       bookings: rows,
       total: count,
       page: parseInt(page),
@@ -730,7 +690,7 @@ exports.listBookings = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error fetching booking list" });
+    res.serverError(error.message, "Error fetching booking list");
   }
 };
 
@@ -745,7 +705,7 @@ exports.getBookingDetails = async (req, res) => {
         req.user.role !== "org_admin" &&
         req.user.role !== "staff")
     ) {
-      return res.status(403).json({ error: "Access denied" });
+      return res.forbidden(null, "Access denied");
     }
 
     const booking = await Booking.findOne({
@@ -761,13 +721,13 @@ exports.getBookingDetails = async (req, res) => {
     });
 
     if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.notFound("Booking not found");
     }
 
-    res.json(booking);
+    res.successResponse(booking);
   } catch (error) {
     console.error("Error fetching booking details:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.serverError(error.message, "Internal server error");
   }
 };
 
@@ -791,11 +751,11 @@ exports.cancelBooking = async (req, res) => {
     // For this implementation, I'll check if it's admin. Use middleware for the public part later or check "req.bookingAuth"
     if (!req.user && !req.bookingAuth) {
       // req.bookingAuth would be set by a middleware decoding the public token
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.unauthorized(null, "Unauthorized");
     }
 
     if (booking.status === "cancelled") {
-      return res.status(400).json({ error: "Booking is already cancelled" });
+      return res.badRequest("Booking is already cancelled");
     }
 
     // Verify Cancellation Window
@@ -872,10 +832,10 @@ exports.cancelBooking = async (req, res) => {
       { reason, previousStatus: "confirmed" }, // Assuming it was confirmed
     );
 
-    res.json({ success: true, booking });
+    res.successResponse(booking);
   } catch (error) {
     console.error("Cancel Error:", error);
-    res.status(500).json({ error: "Failed to cancel booking" });
+    res.serverError(error.message, "Failed to cancel booking");
   }
 };
 
@@ -888,13 +848,13 @@ exports.rescheduleBooking = async (req, res) => {
 
     if (!req.user && !req.bookingAuth) {
       await t.rollback();
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const booking = await Booking.findByPk(id);
     if (!booking) {
       await t.rollback();
-      return res.status(404).json({ error: "Booking not found" });
+      return res.notFound("Booking not found");
     }
 
     // Calculate new end time based on original duration
@@ -921,7 +881,7 @@ exports.rescheduleBooking = async (req, res) => {
 
     if (conflict) {
       await t.rollback();
-      return res.status(409).json({ error: "New slot is not available" });
+      return res.status(409).successResponse(null, "New slot is not available");
     }
 
     booking.startTime = start;
@@ -955,11 +915,11 @@ exports.rescheduleBooking = async (req, res) => {
       reason: req.body.reason,
     });
 
-    res.json({ success: true, booking });
+    res.successResponse(booking);
   } catch (error) {
     await t.rollback();
     console.error("Reschedule Error:", error);
-    res.status(500).json({ error: "Failed to reschedule booking" });
+    res.serverError(error.message, "Failed to reschedule booking");
   }
 };
 
@@ -975,9 +935,7 @@ exports.verifyPublicAccess = async (req, res) => {
 
     // Simple email normalization comparison
     if (booking.customerEmail.toLowerCase() !== email.toLowerCase()) {
-      return res
-        .status(403)
-        .json({ error: "Email does not match booking record" });
+      return res.forbidden(null, "Email does not match booking record");
     }
 
     // Generate a temporary access token for this booking
@@ -989,8 +947,7 @@ exports.verifyPublicAccess = async (req, res) => {
     const tokenService = require("../services/tokenService");
     const token = tokenService.generateBookingToken(booking, "1h");
 
-    res.json({
-      success: true,
+    res.successResponse({
       token,
       booking: {
         id: booking.id,
@@ -1004,7 +961,7 @@ exports.verifyPublicAccess = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: "Verification failed" });
+    res.serverError(error.message, "Verification failed");
   }
 };
 
@@ -1019,7 +976,7 @@ exports.markNoShow = async (req, res) => {
         req.user.role !== "org_admin" &&
         req.user.role !== "staff")
     ) {
-      return res.status(403).json({ error: "Access denied" });
+      return res.forbidden(null, "Access denied");
     }
 
     const booking = await Booking.findByPk(id);
@@ -1028,9 +985,10 @@ exports.markNoShow = async (req, res) => {
     // Allow marking no-show even if awaiting completion? Yes.
     // Block if already cancelled or completed?
     if (booking.status === "cancelled" || booking.status === "completed") {
-      return res
-        .status(400)
-        .json({ error: `Cannot mark as No Show. Status is ${booking.status}` });
+      return res.badRequest(
+        null,
+        `Cannot mark as No Show. Status is ${booking.status}`,
+      );
     }
 
     booking.status = "no_show"; // Ensure consistent casing with model comment
@@ -1045,7 +1003,7 @@ exports.markNoShow = async (req, res) => {
     res.json({ success: true, booking });
   } catch (error) {
     console.error("No Show Error:", error);
-    res.status(500).json({ error: "Failed to mark as No Show" });
+    res.serverError(error.message, "Failed to mark as No Show");
   }
 };
 
@@ -1060,7 +1018,7 @@ exports.markCompleted = async (req, res) => {
         req.user.role !== "org_admin" &&
         req.user.role !== "staff")
     ) {
-      return res.status(403).json({ error: "Access denied" });
+      return res.forbidden(null, "Access denied");
     }
 
     const booking = await Booking.findByPk(id);
@@ -1069,9 +1027,7 @@ exports.markCompleted = async (req, res) => {
     // Validate transition
     // Usually from 'awaiting_completion' or 'confirmed'
     if (booking.status === "cancelled") {
-      return res
-        .status(400)
-        .json({ error: "Cannot complete a cancelled booking." });
+      return res.badRequest("Cannot complete a cancelled booking.");
     }
 
     booking.status = "completed";
@@ -1252,14 +1208,14 @@ exports.markCompleted = async (req, res) => {
     res.json({ success: true, booking });
   } catch (error) {
     console.error("Complete Error:", error);
-    res.status(500).json({ error: "Failed to mark as Completed" });
+    res.serverError(error.message, "Failed to mark as Completed");
   }
 };
 
 exports.cancelPublicBookingBatch = async (req, res) => {
   const token = req.headers["x-booking-token"];
   if (!token) {
-    return res.status(401).json({ error: "Missing booking token" });
+    return res.unauthorized(null, "Missing booking token");
   }
 
   try {
@@ -1273,7 +1229,7 @@ exports.cancelPublicBookingBatch = async (req, res) => {
       !decoded.bookingIds ||
       !Array.isArray(decoded.bookingIds)
     ) {
-      return res.status(403).json({ error: "Invalid token payload" });
+      return res.forbidden(null, "Invalid token payload");
     }
 
     const { bookingIds } = decoded;
@@ -1300,14 +1256,14 @@ exports.cancelPublicBookingBatch = async (req, res) => {
       console.log(
         `[BatchCancel] Cancelled ${bookingIds.length} bookings via token.`,
       );
-      res.json({ success: true, message: "Bookings cancelled" });
+      res.successResponse(null, "Bookings cancelled");
     } catch (err) {
       await t.rollback();
       throw err;
     }
   } catch (error) {
     console.error("Batch Cancel Error:", error);
-    return res.status(401).json({ error: "Invalid or expired token" });
+    return res.unauthorized(null, "Invalid or expired token");
   }
 };
 exports.listUserBookings = async (req, res) => {
@@ -1318,7 +1274,7 @@ exports.listUserBookings = async (req, res) => {
     const limitNum = parseInt(limit);
 
     if (!userEmail) {
-      return res.status(400).json({ error: "User email not found in token" });
+      return res.badRequest("User email not found in token");
     }
 
     const whereClause = {
@@ -1353,7 +1309,7 @@ exports.listUserBookings = async (req, res) => {
       offset: offset,
     });
 
-    res.json({
+    res.successResponse({
       bookings: rows,
       total: count,
       page: parseInt(page),
@@ -1361,7 +1317,7 @@ exports.listUserBookings = async (req, res) => {
     });
   } catch (error) {
     console.error("List User Bookings Error:", error);
-    res.status(500).json({ error: "Error fetching user bookings" });
+    res.serverError(error.message, "Error fetching user bookings");
   }
 };
 
@@ -1413,13 +1369,13 @@ exports.getUserStats = async (req, res) => {
       return sum + parseFloat(booking.paymentAmount || 0);
     }, 0);
 
-    res.json({
+    res.successResponse({
       totalBookings,
       upcomingBookings,
       totalSpent: totalSpent.toFixed(2),
     });
   } catch (error) {
     console.error("Get User Stats Error:", error);
-    res.status(500).json({ error: "Error fetching user stats" });
+    res.serverError(error.message, "Error fetching user stats");
   }
 };

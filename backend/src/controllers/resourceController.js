@@ -6,10 +6,10 @@ exports.getAllResources = async (req, res) => {
       where: { orgId: req.tenant.id },
       order: [["name", "ASC"]],
     });
-    res.json(resources);
+    res.successResponse(resources);
   } catch (error) {
     console.error("Get Resources Error:", error);
-    res.status(500).json({ error: "Failed to fetch resources" });
+    res.serverError(error.message, "Failed to fetch resources");
   }
 };
 
@@ -22,10 +22,10 @@ exports.createResource = async (req, res) => {
       type,
       quantity,
     });
-    res.status(201).json(resource);
+    res.status(201).successResponse(resource);
   } catch (error) {
     console.error("Create Resource Error:", error);
-    res.status(500).json({ error: "Failed to create resource" });
+    res.serverError(error.message, "Failed to create resource");
   }
 };
 
@@ -37,17 +37,17 @@ exports.updateResource = async (req, res) => {
       where: { id, orgId: req.tenant.id },
     });
 
-    if (!resource) return res.status(404).json({ error: "Resource not found" });
+    if (!resource) return res.notFound("Resource not found");
 
     resource.name = name;
     resource.type = type;
     resource.quantity = quantity;
     await resource.save();
 
-    res.json(resource);
+    res.successResponse(resource);
   } catch (error) {
     console.error("Update Resource Error:", error);
-    res.status(500).json({ error: "Failed to update resource" });
+    res.serverError(error.message, "Failed to update resource");
   }
 };
 
@@ -58,19 +58,19 @@ exports.deleteResource = async (req, res) => {
       where: { id, orgId: req.tenant.id },
     });
 
-    if (!resource) return res.status(404).json({ error: "Resource not found" });
+    if (!resource) return res.notFound("Resource not found");
 
     // Check if in use?
     // Optional: Prevent delete if ServiceResource links exist
     const inUse = await ServiceResource.count({ where: { resourceId: id } });
     if (inUse > 0) {
-      return res.status(400).json({ error: "Resource is in use by services" });
+      return res.badRequest("Resource is in use by services");
     }
 
     await resource.destroy();
-    res.json({ message: "Resource deleted" });
+    res.successResponse(null, "Resource deleted");
   } catch (error) {
     console.error("Delete Resource Error:", error);
-    res.status(500).json({ error: "Failed to delete resource" });
+    res.serverError(error.message, "Failed to delete resource");
   }
 };

@@ -12,7 +12,7 @@ export const fetchStaffSchedule = (staffId) => async (dispatch) => {
     const response = await axiosInstance.get(
       `/organization/team/${staffId}/schedule`
     );
-    dispatch(fetchSuccess(response.data));
+    dispatch(fetchSuccess(response.data.data));
   } catch (error) {
     console.error(error);
     dispatch(

@@ -15,7 +15,7 @@ exports.generateSiteContent = async (req, res) => {
     });
 
     if (!organization) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     const serviceNames = organization.Services.map((s) => s.name).join(", ");
@@ -58,10 +58,10 @@ exports.generateSiteContent = async (req, res) => {
     organization.content = { ...organization.content, ...content };
     await organization.save();
 
-    res.json(organization.content);
+    res.successResponse(organization.content);
   } catch (error) {
     console.error("AI Generation Error:", error);
-    res.status(500).json({ error: "Failed to generate content" });
+    res.serverError(error.message, "Failed to generate content");
   }
 };
 
@@ -72,9 +72,10 @@ exports.generateServiceDescriptions = async (req, res) => {
     const services = await Service.findAll({ where: { orgId } });
 
     if (services.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "No services found to generate descriptions for." });
+      return res.badRequest(
+        null,
+        "No services found to generate descriptions for.",
+      );
     }
 
     const serviceList = services.map((s) => s.name).join(", ");
@@ -106,7 +107,7 @@ exports.generateServiceDescriptions = async (req, res) => {
       let desc = descriptions[service.name];
       if (!desc) {
         const key = Object.keys(descriptions).find(
-          (k) => k.toLowerCase() === service.name.toLowerCase()
+          (k) => k.toLowerCase() === service.name.toLowerCase(),
         );
         if (key) desc = descriptions[key];
       }
@@ -123,13 +124,14 @@ exports.generateServiceDescriptions = async (req, res) => {
     await Promise.all(updatePromises);
     console.log("All services updated.");
 
-    res.json({
-      success: true,
-      message: "Service descriptions updated.",
-      descriptions,
-    });
+    res.successResponse(
+      {
+        descriptions,
+      },
+      "Service descriptions updated.",
+    );
   } catch (error) {
     console.error("AI Service Desc Error:", error);
-    res.status(500).json({ error: "Failed to generate service descriptions" });
+    res.serverError(error.message, "Failed to generate service descriptions");
   }
 };

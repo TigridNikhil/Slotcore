@@ -31,7 +31,7 @@ export default function ModernTemplate({ org }) {
                   background: `linear-gradient(135deg, ${org.primaryColor}, ${org.primaryColor}99)`,
                 }}
               >
-                {org.name.charAt(0)}
+                {org.name?.charAt(0) || "S"}
               </div>
             )}
 
@@ -183,7 +183,7 @@ export default function ModernTemplate({ org }) {
                             />
                             {label}
                           </div>
-                        )
+                        ),
                       )}
                     </div>
                   </div>

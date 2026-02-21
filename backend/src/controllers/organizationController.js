@@ -1,4 +1,3 @@
-// ... imports
 const { Organization, Booking, Service, sequelize } = require("../models");
 const { Op } = require("sequelize");
 
@@ -8,7 +7,7 @@ exports.getPublicInfo = async (req, res) => {
     const tenant = req.tenant;
 
     if (!tenant) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     // Return only safe public info
@@ -50,7 +49,7 @@ exports.getPublicInfo = async (req, res) => {
       },
     });
 
-    res.json({
+    res.successResponse({
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
@@ -67,7 +66,7 @@ exports.getPublicInfo = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error" });
+    res.serverError(error.message, "Server error");
   }
 };
 
@@ -156,7 +155,7 @@ exports.getStats = async (req, res) => {
     });
 
     const servicePerformance = Object.values(serviceStats).sort(
-      (a, b) => b.revenue - a.revenue
+      (a, b) => b.revenue - a.revenue,
     );
 
     // 6. Timeline Data (Daily for the range)
@@ -187,7 +186,7 @@ exports.getStats = async (req, res) => {
       }
     });
 
-    res.json({
+    res.successResponse({
       totalBookings,
       activeServices,
       revenue,
@@ -197,7 +196,7 @@ exports.getStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Stats Error:", error);
-    res.status(500).json({ error: "Failed to fetch stats" });
+    res.serverError(error.message, "Failed to fetch stats");
   }
 };
 
@@ -291,7 +290,7 @@ exports.getOverview = async (req, res) => {
     });
 
     const servicePerformance = Object.values(serviceStats).sort(
-      (a, b) => b.revenue - a.revenue
+      (a, b) => b.revenue - a.revenue,
     );
 
     // 6. Timeline Data (Daily for the range)
@@ -327,7 +326,7 @@ exports.getOverview = async (req, res) => {
       count: d.bookings,
     }));
 
-    res.json({
+    res.successResponse({
       totalBookings,
       activeServices,
       revenue,
@@ -338,7 +337,7 @@ exports.getOverview = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Overview Error:", error);
-    res.status(500).json({ error: "Failed to fetch overview" });
+    res.serverError(error.message, "Failed to fetch overview");
   }
 };
 
@@ -347,12 +346,9 @@ exports.updateOrganization = async (req, res) => {
     const orgId = req.orgId; // From auth middleware, not body!
     const { name, primaryColor, content } = req.body;
 
-    // Use organization from tenant resolver might be better, but we need the instance to save
-    // actually req.tenant is available but it's a plain object (sometimes) depending on resolver?
-    // Let's safe query by ID
     const organization = await Organization.findByPk(orgId);
     if (!organization) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     if (name) organization.name = name;
@@ -376,19 +372,20 @@ exports.updateOrganization = async (req, res) => {
 
     await organization.save();
 
-    res.json({ success: true, organization });
+    res.successResponse({ organization }, "Organization updated successfully");
   } catch (error) {
     console.error("Update Org Error:", error);
-    res.status(500).json({ error: "Failed to update organization" });
+    res.serverError(error.message, "Failed to update organization");
   }
 };
+
 exports.getSettings = async (req, res) => {
   try {
     const orgId = req.orgId;
     const organization = await Organization.findByPk(orgId);
-    if (!organization) return res.status(404).json({ error: "Org not found" });
+    if (!organization) return res.notFound("Org not found");
 
-    res.json({
+    res.successResponse({
       name: organization.name,
       primaryColor: organization.primaryColor,
       settings: organization.settings,
@@ -401,6 +398,6 @@ exports.getSettings = async (req, res) => {
     });
   } catch (error) {
     console.error("Get Settings Error:", error);
-    res.status(500).json({ error: "Failed to fetch settings" });
+    res.serverError(error.message, "Failed to fetch settings");
   }
 };

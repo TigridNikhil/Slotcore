@@ -6,28 +6,17 @@ exports.getBookingLogs = async (req, res) => {
 
     // Check permissions (Admin/Staff only)
     if (!req.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
     const logs = await AuditLog.findAll({
       where: { entityId: id, entityType: "Booking" },
       order: [["createdAt", "DESC"]],
-      include: [
-        // Optional: Include User to get name if performedBy is set
-        // But AuditLog model definition didn't explicitly set up association to User for 'performedBy'.
-        // Let's rely on 'performedBy' ID or 'performedByEmail' for now.
-        // Or we can simple fetch Users separately or add association if strictly needed.
-        // Ideally we added: AuditLog.belongsTo(User, { foreignKey: 'performedBy' });
-      ],
     });
 
-    // Enrich logs with User names manually if needed or just return raw
-    // For MVP, raw is fine, frontend can resolve if needed.
-    // Actually, adding association is better.
-
-    res.json(logs);
+    res.successResponse(logs);
   } catch (error) {
     console.error("Get Logs Error:", error);
-    res.status(500).json({ error: "Failed to fetch logs" });
+    res.serverError(error.message, "Failed to fetch logs");
   }
 };

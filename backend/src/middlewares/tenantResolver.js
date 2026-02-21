@@ -51,7 +51,7 @@ const tenantResolver = async (req, res, next) => {
       !hostname.includes(BASE_DOMAIN) &&
       process.env.NODE_ENV !== "development"
     ) {
-      return res.status(404).json({ error: "Invalid domain configuration" });
+      return res.notFound("Invalid domain configuration");
     }
 
     // Find Organization
@@ -72,7 +72,7 @@ const tenantResolver = async (req, res, next) => {
     });
 
     if (!tenant) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     // Attach to request
@@ -83,9 +83,10 @@ const tenantResolver = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Tenant Resolution Error:", error);
-    res
-      .status(500)
-      .json({ error: "Internal Server Error during tenant resolution" });
+    res.serverError(
+      error.message,
+      "Internal Server Error during tenant resolution",
+    );
   }
 };
 

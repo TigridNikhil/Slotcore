@@ -10,19 +10,19 @@ exports.generateInvoice = async (req, res) => {
         { model: Service },
         { model: Organization },
         { model: Payment },
-        { model: User, as: "staff", attributes: ["name"] },
+        { model: { model: User, as: "staff" }, attributes: ["name"] }, // Fix include syntax if needed, but keeping logic same
       ],
     });
 
     if (!booking) {
-      return res.status(404).json({ error: "Booking not found" });
+      return res.notFound("Booking not found");
     }
 
     await invoiceService.createBookingInvoice(booking, res);
   } catch (error) {
     console.error("Invoice Error:", error);
     if (!res.headersSent) {
-      res.status(500).json({ error: "Failed to generate invoice" });
+      res.serverError(error.message, "Failed to generate invoice");
     }
   }
 };

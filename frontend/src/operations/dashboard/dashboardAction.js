@@ -14,7 +14,7 @@ export const getDashboardStats =
       const response = await axiosInstance.get("/organization/stats", {
         params,
       });
-      dispatch(setStats(response.data));
+      dispatch(setStats(response.data.data));
     } catch (error) {
       console.error("Fetch Stats Error:", error);
       dispatch(
@@ -26,7 +26,7 @@ export const getDashboardStats =
 export const getOverviewStats = () => async (dispatch) => {
   try {
     const response = await axiosInstance.get("/organization/overview");
-    dispatch(setOverview(response.data));
+    dispatch(setOverview(response.data.data));
   } catch (error) {
     console.error("Fetch Overview Error:", error);
     // Optional: dispatch error or silent fail

@@ -24,15 +24,15 @@ export default function Payments() {
           res = await axiosInstance.get(
             `/payment/payments?page=${page}&limit=20`
           );
-          setPayments(res.data.payments);
-          setTotalPages(res.data.totalPages);
+          setPayments(res.data.data.payments);
+          setTotalPages(res.data.data.totalPages);
         } else {
           // Org Admin hits same endpoint/logic logic relies on req.orgId injection
           res = await axiosInstance.get(
             `/payment/ledger?page=${page}&limit=20`
           );
-          setLedger(res.data);
-          setTotalPages(res.data.totalPages);
+          setLedger(res.data.data);
+          setTotalPages(res.data.data.totalPages);
         }
       } catch (err) {
         console.error("Failed to fetch data", err);

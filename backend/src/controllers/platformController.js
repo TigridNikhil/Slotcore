@@ -21,12 +21,18 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { role: "super_admin", email },
       process.env.JWT_SECRET || "secret_dev_key",
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
-    return res.json({ token, user: { email, role: "super_admin" } });
+    return res.successResponse(
+      { token, user: { email, role: "super_admin" } },
+      "Login successful",
+    );
   }
 
-  return res.status(401).json({ error: "Invalid credentials" });
+  return res.status(401).json({
+    success: false,
+    message: "Invalid credentials",
+  });
 };
 
 // GET /api/platform/stats
@@ -39,7 +45,7 @@ exports.getDashboardStats = async (req, res) => {
     // Calculate Total Revenue (Real: Sum of platform commissions)
     const revenue = await VendorLedger.sum("platformCommission");
 
-    res.json({
+    res.successResponse({
       totalOrgs,
       activeOrgs,
       totalBookings,
@@ -47,7 +53,7 @@ exports.getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Platform Stats Error:", error);
-    res.status(500).json({ error: "Failed to fetch stats" });
+    res.serverError(error.message, "Failed to fetch stats");
   }
 };
 
@@ -58,7 +64,7 @@ exports.getOrgStats = async (req, res) => {
     const organization = await Organization.findByPk(id);
 
     if (!organization) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     const totalBookings = await Booking.count({ where: { orgId: id } });
@@ -90,14 +96,14 @@ exports.getOrgStats = async (req, res) => {
     const mkTotalViews = marketplaceStats.reduce((sum, s) => sum + s.views, 0);
     const mkTotalClicks = marketplaceStats.reduce(
       (sum, s) => sum + s.clicks,
-      0
+      0,
     );
     const mkTotalRedirects = marketplaceStats.reduce(
       (sum, s) => sum + s.redirects,
-      0
+      0,
     );
 
-    res.json({
+    res.successResponse({
       organization,
       totalBookings,
       activeServices,
@@ -111,7 +117,7 @@ exports.getOrgStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Org Stats Error:", error);
-    res.status(500).json({ error: "Failed to fetch org stats" });
+    res.serverError(error.message, "Failed to fetch org stats");
   }
 };
 
@@ -121,10 +127,10 @@ exports.getAllOrganizations = async (req, res) => {
     const organizations = await Organization.findAll({
       order: [["createdAt", "DESC"]],
     });
-    res.json(organizations);
+    res.successResponse(organizations);
   } catch (error) {
     console.error("Platform List Error:", error);
-    res.status(500).json({ error: "Failed to fetch organizations" });
+    res.serverError(error.message, "Failed to fetch organizations");
   }
 };
 
@@ -137,7 +143,7 @@ exports.updateMarketplaceSettings = async (req, res) => {
 
     const organization = await Organization.findByPk(id);
     if (!organization) {
-      return res.status(404).json({ error: "Organization not found" });
+      return res.notFound("Organization not found");
     }
 
     if (isMarketplaceVisible !== undefined)
@@ -150,14 +156,13 @@ exports.updateMarketplaceSettings = async (req, res) => {
 
     await organization.save();
 
-    res.json(organization);
+    res.successResponse(organization, "Marketplace settings updated");
   } catch (error) {
     console.error("Platform Update Error:", error);
-    res.status(500).json({ error: "Failed to update marketplace settings" });
+    res.serverError(error.message, "Failed to update marketplace settings");
   }
 };
 
-// GET /api/platform/audit-logs
 // GET /api/platform/audit-logs
 exports.getAuditLogs = async (req, res) => {
   try {
@@ -182,13 +187,13 @@ exports.getAuditLogs = async (req, res) => {
       ],
     });
 
-    res.json({
+    res.successResponse({
       logs: rows,
       totalPages: Math.ceil(count / limit),
       currentPage: parseInt(page),
     });
   } catch (error) {
     console.error("Audit Logs Error:", error);
-    res.status(500).json({ error: "Failed to fetch audit logs" });
+    res.serverError(error.message, "Failed to fetch audit logs");
   }
 };

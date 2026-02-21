@@ -22,7 +22,7 @@ export default function OrgLanding() {
         }
 
         const res = await axiosInstance.get("/organization/public");
-        setOrg(res.data);
+        setOrg(res.data.data);
       } catch (err) {
         console.error("Failed to load org info:", err);
         setError("Organization not found or inactive.");

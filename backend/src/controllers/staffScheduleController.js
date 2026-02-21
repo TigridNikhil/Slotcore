@@ -9,17 +9,17 @@ exports.getStaffSchedule = async (req, res) => {
     const user = await User.findOne({
       where: { id: userId, orgId: req.orgId },
     });
-    if (!user) return res.status(404).json({ error: "Staff not found" });
+    if (!user) return res.notFound("Staff not found");
 
     const schedules = await StaffSchedule.findAll({
       where: { userId },
       order: [["dayOfWeek", "ASC"]],
     });
 
-    res.json(schedules);
+    res.successResponse(schedules);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch staff schedule" });
+    res.serverError(error.message, "Failed to fetch staff schedule");
   }
 };
 
@@ -33,11 +33,11 @@ exports.updateStaffSchedule = async (req, res) => {
     const user = await User.findOne({
       where: { id: userId, orgId: req.orgId },
     });
-    if (!user) return res.status(404).json({ error: "Staff not found" });
+    if (!user) return res.notFound("Staff not found");
 
     // Validation
     if (!Array.isArray(schedules)) {
-      return res.status(400).json({ error: "Schedules must be an array" });
+      return res.badRequest("Schedules must be an array");
     }
 
     // Upsert logic
@@ -56,17 +56,17 @@ exports.updateStaffSchedule = async (req, res) => {
             breakEndTime: day.breakEndTime ? day.breakEndTime : null,
             isBreakActive: day.isBreakActive,
           },
-          { transaction }
+          { transaction },
         );
       }
       await transaction.commit();
-      res.json({ success: true });
+      res.successResponse(null, "Schedule updated successfully");
     } catch (err) {
       await transaction.rollback();
       throw err;
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Failed to update staff schedule" });
+    res.serverError(error.message, "Failed to update staff schedule");
   }
 };
