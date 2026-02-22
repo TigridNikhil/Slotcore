@@ -59,7 +59,7 @@ export default function Payments() {
         <div className="flex gap-2">
           <button
             onClick={() => {
-              const token = localStorage.getItem("token");
+              const token = localStorage.getItem("accesstoken");
               // Default to current month for demo
               const date = new Date();
               const month = date.getMonth() + 1;
@@ -78,7 +78,7 @@ export default function Payments() {
           </button>
           <button
             onClick={() => {
-              const token = localStorage.getItem("token");
+              const token = localStorage.getItem("accesstoken");
               window.open(
                 `http://localhost:5000/api/payment/export/csv?token=${token}`,
                 "_blank"

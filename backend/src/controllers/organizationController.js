@@ -411,6 +411,7 @@ exports.getSettings = async (req, res) => {
       plan: organization.plan,
       billingCycle: organization.billingCycle,
       subscriptionStatus: organization.subscriptionStatus,
+      trialEndsAt: organization.trialEndsAt,
       onboardingCompleted: organization.onboardingCompleted,
     });
   } catch (error) {

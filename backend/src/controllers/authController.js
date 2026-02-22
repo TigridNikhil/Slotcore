@@ -53,6 +53,8 @@ exports.registerOrganization = async (req, res) => {
         category: category || "Other",
         categoryId: categoryId || null,
         settings: {},
+        subscriptionStatus: "TRIAL",
+        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
       { transaction: t },
     );
@@ -95,11 +97,14 @@ exports.registerOrganization = async (req, res) => {
           name: organization.name,
           slug: organization.slug,
           subdomain: `${organization.slug}.slotcore.com`, // Frontend hint
+          onboardingCompleted: organization?.onboardingCompleted,
         },
         user: {
           id: user.id,
           email: user.email,
           name: user.name,
+          onboardingCompleted: organization?.onboardingCompleted,
+          orgName: organization?.name,
         },
       },
       "Organization created successfully",

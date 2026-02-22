@@ -14,6 +14,7 @@ export default function DateTimeSelection({
 }) {
   const { tenant } = useSelector((state) => state.publicBooking);
   const { schedules, overrides } = tenant || {};
+  console.log(slots);
 
   return (
     <motion.div
@@ -82,7 +83,7 @@ export default function DateTimeSelection({
               <FaCalendarAlt className="text-4xl mb-2 opacity-20" />
               <p>Select a date to view slots</p>
             </div>
-          ) : slots.length === 0 ? (
+          ) : !slots || slots.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-gray-500">
               No slots available for this date.
             </div>

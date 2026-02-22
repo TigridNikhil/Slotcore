@@ -39,7 +39,7 @@ export default function RegisterOrg() {
     const fetchCats = async () => {
       try {
         const res = await axiosInstance.get("/categories");
-        setCategories(res.data);
+        setCategories(res.data.data);
       } catch (err) {
         console.error("Failed to fetch categories");
       } finally {
@@ -67,7 +67,12 @@ export default function RegisterOrg() {
     e.preventDefault();
     const result = await dispatch(registerOrg(formData));
     if (result && result.success) {
-      navigate("/dashboard");
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user.role === "admin" && !result.organization.onboardingCompleted) {
+        navigate("/onboarding");
+      } else {
+        navigate("/dashboard");
+      }
     }
   };
 

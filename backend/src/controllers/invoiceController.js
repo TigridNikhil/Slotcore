@@ -10,7 +10,7 @@ exports.generateInvoice = async (req, res) => {
         { model: Service },
         { model: Organization },
         { model: Payment },
-        { model: { model: User, as: "staff" }, attributes: ["name"] }, // Fix include syntax if needed, but keeping logic same
+        { model: User, as: "staff", attributes: ["name"] },
       ],
     });
 

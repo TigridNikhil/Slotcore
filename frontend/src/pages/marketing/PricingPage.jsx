@@ -145,6 +145,18 @@ export default function PricingPage() {
             </span>
           </span>
         </div>
+
+        {/* Trial Banner */}
+        <div className="mt-10 inline-flex items-center gap-3 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-full px-6 py-3 shadow-sm">
+          <span className="px-2.5 py-1 bg-primary-500 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+            New
+          </span>
+          <span className="text-sm font-semibold text-neutral-800">
+            All paid plans include a{" "}
+            <strong className="text-primary-600">30-day free trial</strong> with
+            full features — no credit card required.
+          </span>
+        </div>
       </section>
 
       {/* Plans Grid */}
@@ -237,7 +249,9 @@ export default function PricingPage() {
                 }
               `}
               >
-                {plan.name === "Enterprise" ? "Contact Sales" : "Get Started"}
+                {plan.name === "Enterprise"
+                  ? "Contact Sales"
+                  : "Start Free Trial"}
                 <FaArrowRight className="text-xs" />
               </button>
             </div>
@@ -264,7 +278,7 @@ export default function PricingPage() {
             />
             <FaqItem
               q="Do you offer a free trial?"
-              a="Absolutely! All paid plans come with a 14-day free trial, no credit card required to start."
+              a="Absolutely! All paid plans come with a 30-day free trial with full features — no credit card required to start."
             />
             <FaqItem
               q="What payment methods do you accept?"

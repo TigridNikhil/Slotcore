@@ -947,6 +947,18 @@ exports.verifyPublicAccess = async (req, res) => {
     const tokenService = require("../services/tokenService");
     const token = tokenService.generateBookingToken(booking, "1h");
 
+    // Fetch other active bookings for this customer
+    const otherBookings = await Booking.findAll({
+      where: {
+        customerEmail: { [Op.iLike]: email },
+        id: { [Op.ne]: bookingId },
+        status: { [Op.in]: ["pending", "confirmed"] },
+      },
+      include: [{ model: Service, attributes: ["name"] }],
+      order: [["startTime", "ASC"]],
+      limit: 5,
+    });
+
     res.successResponse({
       token,
       booking: {
@@ -954,11 +966,18 @@ exports.verifyPublicAccess = async (req, res) => {
         startTime: booking.startTime,
         endTime: booking.endTime,
         customerName: booking.customerName,
-        serviceId: booking.serviceId, // Needed for slot fetching
+        serviceId: booking.serviceId,
         serviceName: booking.Service?.name,
         status: booking.status,
         bookingId: booking.bookingId,
       },
+      otherBookings: otherBookings.map((b) => ({
+        id: b.id,
+        startTime: b.startTime,
+        serviceName: b.Service?.name,
+        status: b.status,
+        bookingId: b.bookingId,
+      })),
     });
   } catch (error) {
     res.serverError(error.message, "Verification failed");

@@ -199,8 +199,8 @@ export default function BookingPage() {
               dispatch(
                 cancelPublicBooking(
                   bookings.map((b) => b.id),
-                  bookingToken
-                )
+                  bookingToken,
+                ),
               );
               showNotification({
                 type: "INFO",
@@ -246,7 +246,7 @@ export default function BookingPage() {
     ? services.filter((s) => {
         if (!s.locations || s.locations.length === 0) return true;
         return s.locations.some(
-          (l) => String(l.id) === String(selectedLocation.id)
+          (l) => String(l.id) === String(selectedLocation.id),
         );
       })
     : services;
@@ -271,6 +271,8 @@ export default function BookingPage() {
 
   const totalSteps = locations.length > 0 ? 5 : 4; // Loc, Srv, Date, User, Pay
   const displayStep = locations.length > 0 ? step + 1 : step;
+
+  console.log({ slots });
 
   return (
     <WizardLayout tenant={tenant} step={displayStep} totalSteps={totalSteps}>

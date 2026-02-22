@@ -18,6 +18,7 @@ export default function Reviews() {
   const [filter, setFilter] = useState("ALL"); // ALL, APPROVED, PENDING, REJECTED
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [moderatingId, setModeratingId] = useState(null);
 
   useEffect(() => {
     fetchReviews();
@@ -39,6 +40,28 @@ export default function Reviews() {
       showNotification({ type: "ERROR", message: "Failed to fetch reviews" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const moderateReview = async (id, action) => {
+    setModeratingId(id);
+    try {
+      await axiosInstance.patch(`/organization/reviews/${id}/moderation`, {
+        action,
+      });
+      showNotification({
+        type: "SUCCESS",
+        message: `Review ${action === "APPROVE" ? "approved" : "rejected"} successfully`,
+      });
+      fetchReviews();
+    } catch (error) {
+      console.error("Moderate Review Error:", error);
+      showNotification({
+        type: "ERROR",
+        message: "Failed to update review status",
+      });
+    } finally {
+      setModeratingId(null);
     }
   };
 
@@ -140,12 +163,29 @@ export default function Reviews() {
                 </p>
               </div>
 
-              {/* Reply Section (Future) */}
-              {/* <div className="mt-6 pl-16 pt-4 border-t border-gray-50 flex gap-4">
-                <button className="text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center gap-2">
-                    <FaReply /> Reply to Customer
-                </button>
-              </div> */}
+              {/* Approve / Reject Actions */}
+              <div className="mt-4 pl-16 pt-4 border-t border-gray-50 flex gap-3">
+                {review.status !== "APPROVED" && (
+                  <button
+                    onClick={() => moderateReview(review.id, "APPROVE")}
+                    disabled={moderatingId === review.id}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FaCheckCircle />
+                    Approve
+                  </button>
+                )}
+                {review.status !== "REJECTED" && (
+                  <button
+                    onClick={() => moderateReview(review.id, "REJECT")}
+                    disabled={moderatingId === review.id}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <FaTimesCircle />
+                    Reject
+                  </button>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>

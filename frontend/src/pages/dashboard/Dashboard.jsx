@@ -22,6 +22,7 @@ import {
   FaMapMarkerAlt,
   FaBoxOpen,
   FaQrcode,
+  FaGem,
 } from "react-icons/fa";
 import {
   getDashboardStats,
@@ -35,19 +36,34 @@ export default function Dashboard() {
   const dispatch = useDispatch();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [trialInfo, setTrialInfo] = useState(null);
+  const [trialDismissed, setTrialDismissed] = useState(false);
 
   const { stats, loading, overview } = useSelector((state) => state.dashboard);
 
   useEffect(() => {
     dispatch(getDashboardStats());
-    dispatch(getOverviewStats()); // Fetch all-time stats
+    dispatch(getOverviewStats());
 
-    // Fetch organization theme settings
     const fetchTheme = async () => {
       try {
         const res = await axiosInstance.get("/organization/settings");
         if (res.data.data?.primaryColor) {
           applyTheme(res.data.data.primaryColor);
+        }
+        // Set trial info
+        if (
+          res.data.data?.subscriptionStatus === "TRIAL" &&
+          res.data.data?.trialEndsAt
+        ) {
+          const daysLeft = Math.max(
+            0,
+            Math.ceil(
+              (new Date(res.data.data.trialEndsAt) - new Date()) /
+                (1000 * 60 * 60 * 24),
+            ),
+          );
+          setTrialInfo({ daysLeft, endsAt: res.data.data.trialEndsAt });
         }
       } catch (err) {
         console.error("Failed to fetch theme settings", err);
@@ -288,6 +304,45 @@ export default function Dashboard() {
           <span className="font-bold text-gray-900">Dashboard</span>
           <div className="w-8"></div> {/* Spacer for alignment */}
         </div>
+        {/* Trial Banner */}
+        {trialInfo && !trialDismissed && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-4 px-6 flex items-center justify-between shadow-lg"
+          >
+            <div className="flex items-center gap-3 text-white">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <FaGem className="text-lg" />
+              </div>
+              <div>
+                <p className="font-bold text-sm">
+                  Free Trial — {trialInfo.daysLeft} day
+                  {trialInfo.daysLeft !== 1 ? "s" : ""} remaining
+                </p>
+                <p className="text-xs text-white/80">
+                  You have full access to all Business features during your
+                  trial.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/dashboard/upgrade")}
+                className="px-4 py-2 bg-white text-indigo-700 text-sm font-semibold rounded-xl hover:bg-indigo-50 transition-colors"
+              >
+                Upgrade Now
+              </button>
+              <button
+                onClick={() => setTrialDismissed(true)}
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

@@ -3,6 +3,26 @@ const { User, Location, Booking, Organization } = require("../models");
 const { Op } = require("sequelize");
 
 /**
+ * Helper: Resolve the effective plan config for an organization.
+ * If the org is on an active trial, they get BUSINESS-level access.
+ * If the trial has expired, auto-downgrade subscriptionStatus to ACTIVE.
+ */
+async function getEffectivePlanConfig(org) {
+  if (org.subscriptionStatus === "TRIAL") {
+    if (org.trialEndsAt && new Date(org.trialEndsAt) > new Date()) {
+      // Active trial → BUSINESS-level access
+      return PLAN_CONFIG["BUSINESS"];
+    } else {
+      // Trial expired → downgrade silently
+      org.subscriptionStatus = "ACTIVE";
+      await org.save();
+    }
+  }
+  const planKey = org.plan || "STARTER";
+  return PLAN_CONFIG[planKey];
+}
+
+/**
  * Middleware to check if an organization has reached its plan limits
  * @param {string} resourceType - 'users', 'locations', 'appointments'
  */
@@ -19,8 +39,7 @@ const checkPlanLimit = (resourceType) => {
         return res.notFound("Organization not found");
       }
 
-      const planKey = org.plan || "STARTER";
-      const config = PLAN_CONFIG[planKey];
+      const config = await getEffectivePlanConfig(org);
 
       if (!config) {
         return res.serverError("Plan configuration missing");
@@ -30,7 +49,7 @@ const checkPlanLimit = (resourceType) => {
         const userCount = await User.count({ where: { orgId } });
         if (userCount >= config.maxUsers) {
           return res.forbidden(
-            `User limit reached for ${planKey} plan (${config.maxUsers}). Please upgrade your plan.`,
+            `User limit reached for your plan (${config.maxUsers}). Please upgrade your plan.`,
           );
         }
       }
@@ -39,7 +58,7 @@ const checkPlanLimit = (resourceType) => {
         const locationCount = await Location.count({ where: { orgId } });
         if (locationCount >= config.maxLocations) {
           return res.forbidden(
-            `Location limit reached for ${planKey} plan (${config.maxLocations}). Please upgrade your plan.`,
+            `Location limit reached for your plan (${config.maxLocations}). Please upgrade your plan.`,
           );
         }
       }
@@ -61,7 +80,7 @@ const checkPlanLimit = (resourceType) => {
 
         if (appointmentCount >= config.maxAppointmentsPerMonth) {
           return res.forbidden(
-            `Monthly appointment limit reached for ${planKey} plan (${config.maxAppointmentsPerMonth}). Please upgrade your plan.`,
+            `Monthly appointment limit reached for your plan (${config.maxAppointmentsPerMonth}). Please upgrade your plan.`,
           );
         }
       }
@@ -83,12 +102,16 @@ const checkFeatureEnabled = (featureKey) => {
     try {
       const orgId = req.orgId;
       const org = await Organization.findByPk(orgId);
-      const planKey = org?.plan || "STARTER";
-      const config = PLAN_CONFIG[planKey];
+
+      if (!org) {
+        return res.notFound("Organization not found");
+      }
+
+      const config = await getEffectivePlanConfig(org);
 
       if (!config || !config.features[featureKey]) {
         return res.forbidden(
-          `Feature '${featureKey}' is not available on your ${planKey} plan. Please upgrade.`,
+          `Feature '${featureKey}' is not available on your current plan. Please upgrade.`,
         );
       }
 

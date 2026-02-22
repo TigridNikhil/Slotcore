@@ -86,5 +86,11 @@ router.get(
   authorize(["org_admin", "staff"]),
   reviewController.getVendorReviews,
 );
+router.patch(
+  "/reviews/:id/moderation",
+  auth,
+  authorize(["org_admin"]),
+  reviewController.moderateReview,
+);
 
 module.exports = router;

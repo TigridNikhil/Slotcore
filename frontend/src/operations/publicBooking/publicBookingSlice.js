@@ -35,6 +35,8 @@ const publicBookingSlice = createSlice({
       state.loading = false;
     },
     setSlots: (state, action) => {
+      console.log("action", action);
+
       state.slots = action.payload;
       state.loading = false;
     },

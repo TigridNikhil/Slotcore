@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { axiosInstance } from "../../utils/baseurl";
 import {
   FaCalendarAlt,
@@ -15,12 +15,12 @@ import DateTimeSelection from "../booking/Steps/DateTimeSelection";
 
 export default function ManageBooking() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   // State
   const [email, setEmail] = useState("");
   const [token, setToken] = useState(null);
   const [booking, setBooking] = useState(null);
+  const [otherBookings, setOtherBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [view, setView] = useState("verify"); // 'verify' | 'manage'
@@ -31,6 +31,44 @@ export default function ManageBooking() {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [sessionRestored, setSessionRestored] = useState(false);
+
+  // 0. Session Persistence Logic
+  useEffect(() => {
+    const savedSession = sessionStorage.getItem(`booking_session_${id}`);
+    if (savedSession) {
+      try {
+        const {
+          token: sToken,
+          booking: sBooking,
+          otherBookings: sOthers,
+          email: sEmail,
+        } = JSON.parse(savedSession);
+        setToken(sToken);
+        setBooking(sBooking);
+        setOtherBookings(sOthers);
+        setEmail(sEmail);
+        setView("manage");
+      } catch (e) {
+        console.error("Failed to restore session", e);
+        sessionStorage.removeItem(`booking_session_${id}`);
+      }
+    }
+    setSessionRestored(true);
+  }, [id]);
+
+  // Clean up other booking sessions to prevent clutter
+  useEffect(() => {
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (
+        key.startsWith("booking_session_") &&
+        key !== `booking_session_${id}`
+      ) {
+        sessionStorage.removeItem(key);
+      }
+    }
+  }, [id]);
 
   // 1. Verify Identity
   const handleVerify = async (e) => {
@@ -42,12 +80,25 @@ export default function ManageBooking() {
         bookingId: id,
         email: email,
       });
-      setToken(res.data.token); // Secure token
-      setBooking(res.data.booking);
+      setToken(res.data.data.token);
+      setBooking(res.data.data.booking);
+      setOtherBookings(res.data.data.otherBookings || []);
+
+      // Save to session
+      sessionStorage.setItem(
+        `booking_session_${id}`,
+        JSON.stringify({
+          token: res.data.data.token,
+          booking: res.data.data.booking,
+          otherBookings: res.data.data.otherBookings || [],
+          email: email,
+        }),
+      );
+
       setView("manage");
     } catch (err) {
       setError(
-        err.response?.data?.error || "Verification failed. Check your email."
+        err.response?.data?.error || "Verification failed. Check your email.",
       );
     } finally {
       setLoading(false);
@@ -73,9 +124,9 @@ export default function ManageBooking() {
           const res = await axiosInstance.get(
             `/bookings/slots?date=${selectedDate}&serviceId=${
               booking.serviceId || 1
-            }` // Fallback or strict?
+            }`, // Fallback or strict?
           );
-          setAvailableSlots(res.data.slots);
+          setAvailableSlots(res.data.data.slots);
         } catch (error) {
           console.error("Failed to fetch slots", error);
         } finally {
@@ -103,7 +154,7 @@ export default function ManageBooking() {
       await axiosInstance.put(
         `/bookings/${id}/cancel`,
         { reason },
-        getAuthHeaders()
+        getAuthHeaders(),
       );
       // Refresh
       alert("Booking cancelled successfully.");
@@ -118,7 +169,7 @@ export default function ManageBooking() {
   const handleSlotSelect = async (slotTime) => {
     const formattedTime = new Date(slotTime).toLocaleString();
     const reason = window.prompt(
-      `Reschedule to ${formattedTime}?\n\nOptionally enter a reason for rescheduling:`
+      `Reschedule to ${formattedTime}?\n\nOptionally enter a reason for rescheduling:`,
     );
 
     if (reason === null) return; // Cancelled
@@ -128,7 +179,7 @@ export default function ManageBooking() {
       await axiosInstance.put(
         `/bookings/${id}/reschedule`,
         { newStartTime: slotTime, reason },
-        getAuthHeaders()
+        getAuthHeaders(),
       );
       alert("Booking rescheduled successfully.");
       setBooking((prev) => ({
@@ -142,7 +193,7 @@ export default function ManageBooking() {
     } catch (err) {
       alert(
         "Failed to reschedule: " +
-          (err.response?.data?.error || "Slot unavailable")
+          (err.response?.data?.error || "Slot unavailable"),
       );
     } finally {
       setActionLoading(false);
@@ -175,6 +226,14 @@ export default function ManageBooking() {
   };
 
   // UI Components
+  if (!sessionRestored) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <FaSpinner className="animate-spin text-indigo-600 text-3xl" />
+      </div>
+    );
+  }
+
   if (view === "verify") {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
@@ -250,47 +309,51 @@ export default function ManageBooking() {
                       Service
                     </p>
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {booking.serviceName || "Service"}
+                      {booking?.serviceName || "Service"}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {booking.bookingId}
+                      ID: {booking?.bookingId || "N/A"}
                     </p>
                   </div>
-                  <div>{getStatusBadge(booking.status)}</div>
+                  <div>{booking?.status && getStatusBadge(booking.status)}</div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Date & Time</p>
                     <p className="text-lg font-medium text-gray-900">
-                      {new Date(booking.startTime).toLocaleDateString(
-                        undefined,
-                        {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      )}
+                      {booking?.startTime
+                        ? new Date(booking.startTime).toLocaleDateString(
+                            undefined,
+                            {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )
+                        : "N/A"}
                     </p>
                     <p className="text-gray-600">
-                      {new Date(booking.startTime).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {booking?.startTime
+                        ? new Date(booking.startTime).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : ""}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Customer</p>
                     <p className="text-lg font-medium text-gray-900">
-                      {booking.customerName}
+                      {booking?.customerName || "N/A"}
                     </p>
                     <p className="text-gray-600">{email}</p>
                   </div>
                 </div>
 
                 {/* Actions */}
-                {booking.status !== "cancelled" && (
+                {booking?.status && booking.status !== "cancelled" && (
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => setShowReschedule(true)}
@@ -312,10 +375,53 @@ export default function ManageBooking() {
                     </button>
                   </div>
                 )}
-                {booking.status === "cancelled" && (
+                {booking?.status === "cancelled" && (
                   <div className="bg-gray-100 p-4 rounded text-center text-gray-500 italic">
                     This booking has been cancelled. No further actions
                     available.
+                  </div>
+                )}
+
+                {/* Other Bookings Section */}
+                {otherBookings.length > 0 && (
+                  <div className="mt-12 pt-8 border-t border-gray-100">
+                    <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <FaCalendarAlt className="text-indigo-600" />
+                      Your Other Active Bookings
+                    </h4>
+                    <div className="space-y-3">
+                      {otherBookings.map((b) => (
+                        <div
+                          key={b.id}
+                          onClick={() => {
+                            window.location.href = `/booking/${b.id}`;
+                          }}
+                          className="flex justify-between items-center p-4 bg-gray-50 hover:bg-indigo-50 rounded-xl border border-gray-100 cursor-pointer transition-all group"
+                        >
+                          <div>
+                            <p className="font-bold text-gray-900 group-hover:text-indigo-700">
+                              {b.serviceName}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(b.startTime).toLocaleDateString()} at{" "}
+                              {new Date(b.startTime).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                              {b.bookingId}
+                            </span>
+                            <FaArrowLeft
+                              className="rotate-180 text-gray-300 group-hover:text-indigo-400"
+                              size={14}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>

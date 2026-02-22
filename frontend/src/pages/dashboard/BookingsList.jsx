@@ -46,7 +46,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 export default function BookingsList() {
   const dispatch = useDispatch();
   const { bookings, loading, error, totalPages, page, total } = useSelector(
-    (state) => state.booking
+    (state) => state.booking,
   );
 
   const [filters, setFilters] = useState({
@@ -82,7 +82,7 @@ export default function BookingsList() {
           const res = await axiosInstance.get(
             `/bookings/slots?date=${selectedRescheduleDate}&serviceId=${
               rescheduleData.serviceId || 1
-            }`
+            }`,
           );
           setAvailableSlots(res.data.slots);
         } catch (error) {
@@ -123,7 +123,7 @@ export default function BookingsList() {
         startDate: dateString,
         endDate: dateString,
         page: 1,
-      })
+      }),
     );
   };
 
@@ -140,7 +140,7 @@ export default function BookingsList() {
       dispatch(getBookings(filters));
     } catch (error) {
       alert(
-        "Failed to cancel: " + (error.response?.data?.error || "Unknown error")
+        "Failed to cancel: " + (error.response?.data?.error || "Unknown error"),
       );
     } finally {
       setActionLoading(false);
@@ -157,7 +157,7 @@ export default function BookingsList() {
     } catch (error) {
       alert(
         "Failed to mark No Show: " +
-          (error.response?.data?.error || "Unknown error")
+          (error.response?.data?.error || "Unknown error"),
       );
     } finally {
       setActionLoading(false);
@@ -170,7 +170,7 @@ export default function BookingsList() {
         `/bookings/${bookingId}/invoice`,
         {
           responseType: "blob",
-        }
+        },
       );
 
       // Create blob link to download
@@ -211,7 +211,7 @@ export default function BookingsList() {
     } catch (error) {
       alert(
         "Failed to reschedule: " +
-          (error.response?.data?.error || "Slot unavailable or error")
+          (error.response?.data?.error || "Slot unavailable or error"),
       );
     } finally {
       setActionLoading(false);
@@ -228,7 +228,7 @@ export default function BookingsList() {
       dispatch(getBookings(filters));
     } catch (error) {
       alert(
-        "Failed to complete: " + (error.response?.data?.error || "Unknown")
+        "Failed to complete: " + (error.response?.data?.error || "Unknown"),
       );
     } finally {
       setActionLoading(false);
@@ -491,13 +491,13 @@ export default function BookingsList() {
                     {/* SECONDARY ACTIONS */}
                     {booking.status !== "cancelled" && (
                       <div className="flex items-center gap-2">
-                        <IconButton
+                        {/* <IconButton
                           onClick={() => onRescheduleClick(booking)}
                           title="Reschedule"
                           className="text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100"
                         >
                           <FaEdit />
-                        </IconButton>
+                        </IconButton> */}
 
                         <IconButton
                           onClick={() => onCancelBooking(booking.id)}
@@ -625,7 +625,7 @@ const HistoryModal = ({ isOpen, onClose, bookingId }) => {
       setLoading(true);
       axiosInstance
         .get(`/bookings/${bookingId}/logs`)
-        .then((res) => setLogs(res.data))
+        .then((res) => setLogs(res.data.data))
         .catch((err) => console.error(err))
         .finally(() => setLoading(false));
     }
@@ -676,7 +676,7 @@ const HistoryModal = ({ isOpen, onClose, bookingId }) => {
                               </span>{" "}
                               {String(value)}
                             </div>
-                          )
+                          ),
                         )}
                       </pre>
                     ) : (

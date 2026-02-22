@@ -145,6 +145,10 @@ const Organization = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    trialEndsAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     indexes: [{ unique: true, fields: ["slug"] }],
