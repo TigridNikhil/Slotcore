@@ -149,6 +149,10 @@ const Organization = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    nextDueDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     indexes: [{ unique: true, fields: ["slug"] }],

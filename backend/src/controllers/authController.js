@@ -139,8 +139,11 @@ exports.login = async (req, res) => {
     // If slug is provided, use it. If not, and we have req.tenant (from middleware), use that.
     let orgId = req.orgId; // From middleware if present
 
+    console.log(slug);
+    console.log(orgId);
+
     if (!orgId && slug) {
-      const org = await Organization.findOne({ where: { slug } });
+      const org = await Organization.findOne({ where: { slug: slug } });
       if (!org) {
         return res.notFound("Organization not found");
       }

@@ -398,6 +398,33 @@ exports.getSettings = async (req, res) => {
     const organization = await Organization.findByPk(orgId);
     if (!organization) return res.notFound("Org not found");
 
+    // Auto-detect subscription status transitions
+    let statusChanged = false;
+
+    // Trial expired → downgrade to ACTIVE
+    if (
+      organization.subscriptionStatus === "TRIAL" &&
+      organization.trialEndsAt &&
+      new Date(organization.trialEndsAt) <= new Date()
+    ) {
+      organization.subscriptionStatus = "ACTIVE";
+      statusChanged = true;
+    }
+
+    // Payment overdue → set PAST_DUE
+    if (
+      organization.subscriptionStatus === "ACTIVE" &&
+      organization.nextDueDate &&
+      new Date(organization.nextDueDate) < new Date()
+    ) {
+      organization.subscriptionStatus = "PAST_DUE";
+      statusChanged = true;
+    }
+
+    if (statusChanged) {
+      await organization.save();
+    }
+
     res.successResponse({
       name: organization.name,
       primaryColor: organization.primaryColor,
@@ -412,6 +439,7 @@ exports.getSettings = async (req, res) => {
       billingCycle: organization.billingCycle,
       subscriptionStatus: organization.subscriptionStatus,
       trialEndsAt: organization.trialEndsAt,
+      nextDueDate: organization.nextDueDate,
       onboardingCompleted: organization.onboardingCompleted,
     });
   } catch (error) {
@@ -423,12 +451,39 @@ exports.getSettings = async (req, res) => {
 exports.upgradePlan = async (req, res) => {
   try {
     const orgId = req.orgId;
-    const { plan } = req.body;
+    const { plan, billingCycle } = req.body;
     const organization = await Organization.findByPk(orgId);
     if (!organization) return res.notFound("Org not found");
-    organization.plan = plan;
+
+    // Validate plan
+    const validPlans = ["STARTER", "GROWTH", "BUSINESS", "ENTERPRISE"];
+    if (plan && !validPlans.includes(plan)) {
+      return res.badRequest("Invalid plan selected");
+    }
+
+    // Validate billing cycle
+    const validCycles = ["MONTHLY", "YEARLY"];
+    if (billingCycle && !validCycles.includes(billingCycle)) {
+      return res.badRequest("Invalid billing cycle");
+    }
+
+    if (plan) organization.plan = plan;
+    if (billingCycle) organization.billingCycle = billingCycle;
+
+    // End trial when upgrading to a paid plan
+    if (organization.subscriptionStatus === "TRIAL") {
+      organization.subscriptionStatus = "ACTIVE";
+    }
+
     await organization.save();
-    res.successResponse({ organization }, "Plan upgraded successfully");
+    res.successResponse(
+      {
+        plan: organization.plan,
+        billingCycle: organization.billingCycle,
+        subscriptionStatus: organization.subscriptionStatus,
+      },
+      "Plan updated successfully",
+    );
   } catch (error) {
     console.error("Upgrade Plan Error:", error);
     res.serverError(error.message, "Failed to upgrade plan");

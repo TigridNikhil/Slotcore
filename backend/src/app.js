@@ -23,6 +23,7 @@ const marketplaceRoutes = require("./routes/marketplaceRoutes");
 const platformRoutes = require("./routes/platformRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const consumerRoutes = require("./routes/consumerRoutes");
+const billingRoutes = require("./routes/billingRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -94,6 +95,7 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/platform", platformRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/mobile/consumer", consumerRoutes);
+app.use("/api/billing", tenantResolver, billingRoutes);
 
 /* ------------------ ERROR HANDLING ------------------ */
 app.use((req, res) => {

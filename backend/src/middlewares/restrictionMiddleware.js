@@ -10,6 +10,8 @@ const { Op } = require("sequelize");
 async function getEffectivePlanConfig(org) {
   if (org.subscriptionStatus === "TRIAL") {
     if (org.trialEndsAt && new Date(org.trialEndsAt) > new Date()) {
+      console.log("true");
+
       // Active trial → BUSINESS-level access
       return PLAN_CONFIG["BUSINESS"];
     } else {
@@ -18,6 +20,17 @@ async function getEffectivePlanConfig(org) {
       await org.save();
     }
   }
+
+  // Check if subscription payment is overdue
+  if (
+    org.subscriptionStatus === "ACTIVE" &&
+    org.nextDueDate &&
+    new Date(org.nextDueDate) < new Date()
+  ) {
+    org.subscriptionStatus = "PAST_DUE";
+    await org.save();
+  }
+
   const planKey = org.plan || "STARTER";
   return PLAN_CONFIG[planKey];
 }

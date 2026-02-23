@@ -67,12 +67,7 @@ export default function RegisterOrg() {
     e.preventDefault();
     const result = await dispatch(registerOrg(formData));
     if (result && result.success) {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      if (user.role === "admin" && !result.organization.onboardingCompleted) {
-        navigate("/onboarding");
-      } else {
-        navigate("/dashboard");
-      }
+      navigate("/onboarding");
     }
   };
 

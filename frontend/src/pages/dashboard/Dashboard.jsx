@@ -23,6 +23,8 @@ import {
   FaBoxOpen,
   FaQrcode,
   FaGem,
+  FaExclamationTriangle,
+  FaRocket,
 } from "react-icons/fa";
 import {
   getDashboardStats,
@@ -36,8 +38,8 @@ export default function Dashboard() {
   const dispatch = useDispatch();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [trialInfo, setTrialInfo] = useState(null);
-  const [trialDismissed, setTrialDismissed] = useState(false);
+  const [subscriptionBanner, setSubscriptionBanner] = useState(null); // { type, daysLeft, dueDate }
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const { stats, loading, overview } = useSelector((state) => state.dashboard);
 
@@ -51,19 +53,25 @@ export default function Dashboard() {
         if (res.data.data?.primaryColor) {
           applyTheme(res.data.data.primaryColor);
         }
-        // Set trial info
-        if (
-          res.data.data?.subscriptionStatus === "TRIAL" &&
-          res.data.data?.trialEndsAt
-        ) {
+        // Determine subscription banner state
+        const d = res.data.data;
+        if (d?.subscriptionStatus === "PAST_DUE") {
+          setSubscriptionBanner({ type: "overdue", dueDate: d.nextDueDate });
+        } else if (d?.subscriptionStatus === "TRIAL" && d?.trialEndsAt) {
           const daysLeft = Math.max(
             0,
             Math.ceil(
-              (new Date(res.data.data.trialEndsAt) - new Date()) /
-                (1000 * 60 * 60 * 24),
+              (new Date(d.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24),
             ),
           );
-          setTrialInfo({ daysLeft, endsAt: res.data.data.trialEndsAt });
+          setSubscriptionBanner({ type: "trial", daysLeft });
+        } else if (
+          d?.subscriptionStatus === "ACTIVE" &&
+          d?.trialEndsAt &&
+          new Date(d.trialEndsAt) < new Date() &&
+          (!d?.plan || d?.plan === "STARTER")
+        ) {
+          setSubscriptionBanner({ type: "trial_expired" });
         }
       } catch (err) {
         console.error("Failed to fetch theme settings", err);
@@ -304,41 +312,98 @@ export default function Dashboard() {
           <span className="font-bold text-gray-900">Dashboard</span>
           <div className="w-8"></div> {/* Spacer for alignment */}
         </div>
-        {/* Trial Banner */}
-        {trialInfo && !trialDismissed && (
+        {/* Subscription Status Banner */}
+        {subscriptionBanner && !bannerDismissed && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-2xl p-4 px-6 flex items-center justify-between shadow-lg"
+            className={`mb-6 rounded-2xl p-4 px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg ${
+              subscriptionBanner.type === "overdue"
+                ? "bg-gradient-to-r from-red-500 to-red-600"
+                : subscriptionBanner.type === "trial_expired"
+                  ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                  : "bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500"
+            }`}
           >
             <div className="flex items-center gap-3 text-white">
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <FaGem className="text-lg" />
+                {subscriptionBanner.type === "overdue" ? (
+                  <FaExclamationTriangle className="text-lg" />
+                ) : subscriptionBanner.type === "trial_expired" ? (
+                  <FaRocket className="text-lg" />
+                ) : (
+                  <FaGem className="text-lg" />
+                )}
               </div>
               <div>
-                <p className="font-bold text-sm">
-                  Free Trial — {trialInfo.daysLeft} day
-                  {trialInfo.daysLeft !== 1 ? "s" : ""} remaining
-                </p>
-                <p className="text-xs text-white/80">
-                  You have full access to all Business features during your
-                  trial.
-                </p>
+                {subscriptionBanner.type === "trial" && (
+                  <>
+                    <p className="font-bold text-sm">
+                      Free Trial — {subscriptionBanner.daysLeft} day
+                      {subscriptionBanner.daysLeft !== 1 ? "s" : ""} remaining
+                    </p>
+                    <p className="text-xs text-white/80">
+                      You have full access to all Business features during your
+                      trial.
+                    </p>
+                  </>
+                )}
+                {subscriptionBanner.type === "trial_expired" && (
+                  <>
+                    <p className="font-bold text-sm">
+                      Your Free Trial Has Ended
+                    </p>
+                    <p className="text-xs text-white/80">
+                      Subscribe to a plan to continue using premium features
+                      like WhatsApp reminders, online payments, and more.
+                    </p>
+                  </>
+                )}
+                {subscriptionBanner.type === "overdue" && (
+                  <>
+                    <p className="font-bold text-sm">Payment Overdue</p>
+                    <p className="text-xs text-white/80">
+                      Your subscription payment was due on{" "}
+                      {subscriptionBanner.dueDate
+                        ? new Date(
+                            subscriptionBanner.dueDate,
+                          ).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "a past date"}
+                      . Renew now to avoid service interruption.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate("/dashboard/upgrade")}
-                className="px-4 py-2 bg-white text-indigo-700 text-sm font-semibold rounded-xl hover:bg-indigo-50 transition-colors"
+                onClick={() => navigate("/dashboard/organization")}
+                className={`px-5 py-2 text-sm font-bold rounded-xl transition-colors whitespace-nowrap ${
+                  subscriptionBanner.type === "overdue"
+                    ? "bg-white text-red-600 hover:bg-red-50"
+                    : subscriptionBanner.type === "trial_expired"
+                      ? "bg-white text-amber-600 hover:bg-amber-50"
+                      : "bg-white text-indigo-700 hover:bg-indigo-50"
+                }`}
               >
-                Upgrade Now
+                {subscriptionBanner.type === "overdue"
+                  ? "Pay Now"
+                  : subscriptionBanner.type === "trial_expired"
+                    ? "Choose a Plan"
+                    : "Upgrade Now"}
               </button>
-              <button
-                onClick={() => setTrialDismissed(true)}
-                className="text-white/70 hover:text-white transition-colors"
-              >
-                <FaTimes />
-              </button>
+              {subscriptionBanner.type !== "overdue" && (
+                <button
+                  onClick={() => setBannerDismissed(true)}
+                  className="text-white/70 hover:text-white transition-colors"
+                >
+                  <FaTimes />
+                </button>
+              )}
             </div>
           </motion.div>
         )}

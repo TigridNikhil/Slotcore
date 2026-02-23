@@ -147,6 +147,7 @@ const ServicePricing = require("./ServicePricing");
 const VendorLedger = require("./VendorLedger");
 const PlatformCommission = require("./PlatformCommission");
 const OrgNotificationSettings = require("./OrgNotificationSettings");
+const BillingTransaction = require("./BillingTransaction");
 
 // Associations
 User.hasOne(Organization, { foreignKey: "ownerId", as: "organization" });
@@ -222,6 +223,13 @@ Organization.belongsTo(Category, {
 
 // 24. AuditLog <-> Organization
 Organization.hasMany(AuditLog, { foreignKey: "orgId" });
+
+// 25. Organization <-> BillingTransaction
+Organization.hasMany(BillingTransaction, {
+  foreignKey: "orgId",
+  onDelete: "CASCADE",
+});
+BillingTransaction.belongsTo(Organization, { foreignKey: "orgId" });
 AuditLog.belongsTo(Organization, { foreignKey: "orgId" });
 
 module.exports = {
@@ -251,4 +259,5 @@ module.exports = {
   OrgNotificationSettings,
   Category,
   Consumer,
+  BillingTransaction,
 };
