@@ -148,7 +148,7 @@ const HorizontalDateScroller = ({
               key={dateString}
               onClick={() => handleItemClick(date)}
               className={`
-                flex flex-col items-center justify-center min-w-[4.5rem] h-20 rounded-2xl transition-all duration-200 border
+                flex flex-col items-center justify-center min-w-[4rem] sm:min-w-[4.5rem] h-16 sm:h-20 rounded-xl sm:rounded-2xl transition-all duration-200 border
                 ${
                   closed
                     ? "bg-gray-100 border-gray-200 text-gray-300 cursor-not-allowed opacity-60"
@@ -175,8 +175,8 @@ const HorizontalDateScroller = ({
                       selected
                         ? "text-indigo-200"
                         : closed
-                        ? "text-gray-300"
-                        : "text-gray-400"
+                          ? "text-gray-300"
+                          : "text-gray-400"
                     }`}
                   >
                     {formatDay(date)}
@@ -186,8 +186,8 @@ const HorizontalDateScroller = ({
                       selected
                         ? "text-white"
                         : closed
-                        ? "text-gray-300"
-                        : "text-gray-800"
+                          ? "text-gray-300"
+                          : "text-gray-800"
                     }`}
                   >
                     {formatDate(date)}

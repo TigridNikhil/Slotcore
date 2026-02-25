@@ -26,10 +26,10 @@ export default function LocationSelection({
       exit={{ opacity: 0, x: -20 }}
       className="max-w-4xl mx-auto"
     >
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+      <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-1 md:mb-2">
         Select a Location
       </h2>
-      <p className="text-gray-600 mb-8">
+      <p className="text-sm md:text-base text-gray-600 mb-6 md:mb-8">
         Where would you like to book your service?
       </p>
 
@@ -46,7 +46,7 @@ export default function LocationSelection({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onContinue(loc)}
-            className="flex items-start gap-4 p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-left group"
+            className="flex items-start gap-4 p-4 md:p-6 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-left group"
           >
             <div
               className="p-3 rounded-full bg-gray-50 text-gray-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors"

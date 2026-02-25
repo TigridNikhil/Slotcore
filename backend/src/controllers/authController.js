@@ -77,7 +77,12 @@ exports.registerOrganization = async (req, res) => {
     await t.commit();
 
     const accesstoken = jwt.sign(
-      { userId: user.id, orgId: organization.id, role: user.role },
+      {
+        userId: user.id,
+        orgId: organization.id,
+        role: user.role,
+        email: user.email,
+      },
       process.env.JWT_SECRET || "secret_dev_key",
       { expiresIn: "1d" },
     );
@@ -97,13 +102,18 @@ exports.registerOrganization = async (req, res) => {
           name: organization.name,
           slug: organization.slug,
           subdomain: `${organization.slug}.slotcore.com`, // Frontend hint
+          category: organization.category,
+          categoryId: organization.categoryId,
+          planId: organization.planId,
+          subscriptionStatus: organization.subscriptionStatus,
+          trialEndsAt: organization.trialEndsAt,
           onboardingCompleted: organization?.onboardingCompleted,
         },
         user: {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: user.role || "admin",
           orgId: user.orgId,
           slug: organization?.slug, // Return slug
           onboardingCompleted: organization?.onboardingCompleted,

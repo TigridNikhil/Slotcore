@@ -24,7 +24,7 @@ export default function PaymentStep({
 
   const totalAmount = services.reduce(
     (acc, s) => acc + (parseFloat(s.price) || 0),
-    0
+    0,
   );
 
   const handlePay = () => {
@@ -33,13 +33,17 @@ export default function PaymentStep({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Payment Method</h2>
+      <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">
+        Payment Method
+      </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Booking Summary */}
-        <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-          <h3 className="font-semibold text-gray-700 mb-4">Summary</h3>
-          <div className="space-y-3 text-sm">
+        <div className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-100">
+          <h3 className="font-semibold text-sm md:text-base text-gray-700 mb-3 md:mb-4">
+            Summary
+          </h3>
+          <div className="space-y-2 md:space-y-3 text-xs md:text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Service(s)</span>
               <div className="text-right">
@@ -143,8 +147,8 @@ export default function PaymentStep({
           {loading
             ? "Processing..."
             : paymentMethod === "online"
-            ? `Pay ${formatPrice(totalAmount)}`
-            : "Confirm Booking"}
+              ? `Pay ${formatPrice(totalAmount)}`
+              : "Confirm Booking"}
         </button>
       </div>
     </div>

@@ -29,7 +29,7 @@ export default function UserDetails({
   const activeServices = services || (service ? [service] : []);
   const totalPrice = activeServices.reduce(
     (acc, s) => acc + parseFloat(s.price || 0),
-    0
+    0,
   );
 
   return (
@@ -39,7 +39,7 @@ export default function UserDetails({
       exit={{ opacity: 0, x: -20 }}
       className="h-full flex flex-col"
     >
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-4 md:mb-6">
         <button
           onClick={onBack}
           className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
@@ -47,13 +47,17 @@ export default function UserDetails({
           <FaArrowLeft />
         </button>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Final Details</h2>
-          <p className="text-sm text-gray-500">Confirm your appointment</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+            Final Details
+          </h2>
+          <p className="text-xs md:text-sm text-gray-500">
+            Confirm your appointment
+          </p>
         </div>
       </div>
 
-      <div className="bg-gray-50 p-6 rounded-xl mb-8 border border-gray-100">
-        <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">
+      <div className="bg-gray-50 p-4 sm:p-6 rounded-xl mb-6 md:mb-8 border border-gray-100">
+        <h3 className="text-[10px] md:text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 md:mb-4">
           Summary
         </h3>
 

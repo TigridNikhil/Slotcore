@@ -36,11 +36,11 @@ export default function ServiceSelection({
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="px-6 pt-6 pb-4 bg-white border-b">
-        <h2 className="text-2xl font-bold text-gray-900">
+      <div className="px-4 sm:px-6 pt-6 pb-4 bg-white border-b">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
           {isSingle ? "Our Service" : "Choose a Service"}
         </h2>
-        <p className="text-gray-500 mt-1 text-sm">
+        <p className="text-gray-500 mt-1 text-xs sm:text-sm">
           {isSingle
             ? "Select the service below to continue with your booking."
             : "Select one or more services you would like to book today."}
@@ -48,8 +48,8 @@ export default function ServiceSelection({
       </div>
 
       {/* Service List */}
-      <div className="h-[400px] overflow-y-auto">
-        <div className="flex-1  px-6 py-5 space-y-4">
+      <div className="flex-1 overflow-y-visible">
+        <div className="px-4 sm:px-6 py-5 space-y-4">
           {services.map((service, idx) => {
             const isSelected = selectedIds.includes(service.id);
 
