@@ -88,7 +88,7 @@ exports.registerOrganization = async (req, res) => {
       { expiresIn: "7d" },
     );
 
-    res.status(201).successResponse(
+    res.successResponse(
       {
         accesstoken,
         refreshtoken,
@@ -101,8 +101,11 @@ exports.registerOrganization = async (req, res) => {
         },
         user: {
           id: user.id,
-          email: user.email,
           name: user.name,
+          email: user.email,
+          role: user.role,
+          orgId: user.orgId,
+          slug: organization?.slug, // Return slug
           onboardingCompleted: organization?.onboardingCompleted,
           orgName: organization?.name,
         },

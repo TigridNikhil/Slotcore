@@ -14,10 +14,16 @@
     "dialect": "postgres"
   },
   "production": {
-    "username": "postgres",
-    "password": "@Tigrid7561",
-    "database": "slotcore_db",
-    "host": "localhost",
-    "dialect": "postgres"
+    "username": "neondb_owner",
+    "password": "npg_4xYV7DnIwaJc",
+    "database": "neondb",
+    "host": "ep-divine-bread-ai5yosvo-pooler.c-4.us-east-1.aws.neon.tech",
+    "dialect": "postgres",
+    "dialectOptions": {
+      "ssl": {
+        "require": true,
+        "rejectUnauthorized": false
+      }
+    }
   }
 }
