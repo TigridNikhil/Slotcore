@@ -89,7 +89,7 @@ export default function UserDetails({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">
