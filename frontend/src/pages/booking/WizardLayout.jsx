@@ -24,7 +24,7 @@ export default function WizardLayout({ children, tenant, step, totalSteps }) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden relative z-10 grid grid-cols-1 md:grid-cols-[300px_1fr] md:min-h-[600px] max-h-[95vh] md:max-h-none"
+        className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden relative z-10 grid grid-cols-1 grid-rows-[auto_1fr] md:grid-rows-none md:grid-cols-[300px_1fr] md:min-h-[600px] max-h-[95vh] md:max-h-none"
       >
         {/* Sidebar / Top Header */}
         <div className="bg-gray-900 text-white p-6 md:p-8 flex flex-col md:justify-between relative overflow-hidden">
@@ -144,9 +144,7 @@ export default function WizardLayout({ children, tenant, step, totalSteps }) {
         </div>
 
         {/* Content Area */}
-        <div className="p-4 sm:p-6 md:p-12 h-full overflow-y-auto">
-          {children}
-        </div>
+        <div className="p-4 sm:p-6 md:p-12 overflow-y-auto">{children}</div>
       </motion.div>
     </div>
   );

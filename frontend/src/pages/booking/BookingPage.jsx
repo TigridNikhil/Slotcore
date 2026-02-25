@@ -272,8 +272,6 @@ export default function BookingPage() {
   const totalSteps = locations.length > 0 ? 5 : 4; // Loc, Srv, Date, User, Pay
   const displayStep = locations.length > 0 ? step + 1 : step;
 
-  console.log({ slots });
-
   return (
     <WizardLayout tenant={tenant} step={displayStep} totalSteps={totalSteps}>
       <AnimatePresence mode="wait">

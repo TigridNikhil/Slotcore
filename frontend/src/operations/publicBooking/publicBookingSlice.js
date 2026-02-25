@@ -2,7 +2,6 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   tenant: null,
-  tenant: null,
   services: [],
   locations: [], // New
   slots: [],
@@ -21,7 +20,6 @@ const publicBookingSlice = createSlice({
     },
     setTenant: (state, action) => {
       console.log("action", action);
-
       state.tenant = action.payload;
       state.loading = false;
     },

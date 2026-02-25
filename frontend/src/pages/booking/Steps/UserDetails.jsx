@@ -37,7 +37,7 @@ export default function UserDetails({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="h-full flex flex-col"
+      className="flex flex-col"
     >
       <div className="flex items-center gap-4 mb-4 md:mb-6">
         <button
@@ -89,7 +89,7 @@ export default function UserDetails({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 overflow-y-auto">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">

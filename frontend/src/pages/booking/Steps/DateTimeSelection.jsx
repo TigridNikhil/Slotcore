@@ -14,14 +14,13 @@ export default function DateTimeSelection({
 }) {
   const { tenant } = useSelector((state) => state.publicBooking);
   const { schedules, overrides } = tenant || {};
-  console.log(slots);
 
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="h-full flex flex-col"
+      className="flex flex-col"
     >
       <div className="flex items-center gap-4 mb-4 md:mb-6">
         <button
@@ -40,7 +39,7 @@ export default function DateTimeSelection({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6 md:gap-8 min-h-0 flex-1">
+      <div className="">
         {/* Date Picker (Left on Desktop) */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-4">
@@ -69,7 +68,7 @@ export default function DateTimeSelection({
         </div>
 
         {/* Slots Grid (Right on Desktop) */}
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex flex-col">
           <label className="block text-sm font-bold text-gray-700 mb-2">
             Available Slots
           </label>
@@ -88,7 +87,7 @@ export default function DateTimeSelection({
               No slots available for this date.
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-3 overflow-y-auto max-h-[300px] md:max-h-[400px] pr-2 custom-scrollbar">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2 md:gap-3 lg:overflow-y-auto lg:max-h-[400px] pr-2 custom-scrollbar">
               {slots.map((slotData, idx) => {
                 const isObject = typeof slotData === "object";
                 const slotTime = isObject ? slotData.time : slotData;
