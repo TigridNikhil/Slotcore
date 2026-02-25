@@ -1,0 +1,13 @@
+{
+  "name": "slotcore-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "slotifyadminfrontend"
+  ],
+  "scripts": {
+    "start": "npm run start --prefix backend"
+  }
+}
