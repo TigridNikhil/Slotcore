@@ -54,6 +54,7 @@ function App() {
   const isMainDomain =
     hostname === "localhost" ||
     hostname === "slotcore.com" ||
+    hostname === "slotcore.vercel.app" ||
     hostname.startsWith("www");
 
   return (
