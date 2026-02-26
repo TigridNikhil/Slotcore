@@ -101,10 +101,10 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(responseMiddleware);
 
-app.use(express.static(path.join(__dirname, "../../frontend/dist")));
-app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../../frontend/dist/index.html"));
-});
+// app.use(express.static(path.join(__dirname, "../../frontend/dist")));
+// app.get(/^(?!\/api).*/, (req, res) => {
+//   res.sendFile(path.resolve(__dirname, "../../frontend/dist/index.html"));
+// });
 
 /* ------------------ HEALTH ------------------ */
 app.get("/health", (req, res) => {
