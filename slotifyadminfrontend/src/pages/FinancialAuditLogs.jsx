@@ -28,7 +28,7 @@ export default function FinancialAuditLogs() {
           },
         }
       );
-      setOrgs(res.data);
+      setOrgs(res.data.data);
     } catch (err) {
       console.error("Failed to fetch orgs", err);
     }
@@ -51,8 +51,8 @@ export default function FinancialAuditLogs() {
           },
         }
       );
-      setLogs(res.data.logs);
-      setTotalPages(res.data.totalPages);
+      setLogs(res.data.data.logs);
+      setTotalPages(res.data.data.totalPages);
     } catch (err) {
       console.error("Failed to fetch logs", err);
     } finally {

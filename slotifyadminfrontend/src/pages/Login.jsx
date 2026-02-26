@@ -13,8 +13,8 @@ export default function Login({ onLogin }) {
         email,
         password,
       });
-      if (res.data.token) {
-        localStorage.setItem("platform_token", res.data.token);
+      if (res.data.data.token) {
+        localStorage.setItem("platform_token", res.data.data.token);
         onLogin();
       }
     } catch (err) {

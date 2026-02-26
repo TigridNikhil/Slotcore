@@ -59,7 +59,7 @@ export default function OrgDetails() {
           },
         }
       );
-      setLedgerData(res.data);
+      setLedgerData(res.data.data);
     } catch (err) {
       console.error("Failed to fetch ledger", err);
     } finally {

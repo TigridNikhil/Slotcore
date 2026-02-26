@@ -109,7 +109,7 @@ export default function MarketplaceHome() {
     (org) =>
       org.marketplaceTag === "FEATURED" ||
       org.marketplaceTag === "NEW" ||
-      org.marketplaceTag === "POPULAR"
+      org.marketplaceTag === "POPULAR",
   );
   const showFeaturedSection =
     (!tagFilter && !activeCategory) ||
@@ -120,7 +120,7 @@ export default function MarketplaceHome() {
     (org) =>
       org.marketplaceTag !== "FEATURED" &&
       org.marketplaceTag !== "NEW" &&
-      org.marketplaceTag !== "POPULAR"
+      org.marketplaceTag !== "POPULAR",
   );
 
   return (
@@ -566,7 +566,7 @@ function QuickViewModal({ org, onClose, onRedirect }) {
     try {
       setLoadingReviews(true);
       const res = await axiosInstance.get(
-        `/marketplace/orgs/${org.id}/reviews?limit=3`
+        `/marketplace/orgs/${org.id}/reviews?limit=3`,
       );
       setReviews(res.data.reviews || []);
     } catch (error) {
@@ -580,7 +580,7 @@ function QuickViewModal({ org, onClose, onRedirect }) {
     const protocol = window.location.protocol;
     const host = window.location.host;
     const rootDomain = host.replace("www.", "");
-    return `${protocol}//${slug}.${rootDomain}`;
+    return `https://slotcore.vercel.app/preview?org=${slug}`;
   };
 
   const handleVisit = () => {

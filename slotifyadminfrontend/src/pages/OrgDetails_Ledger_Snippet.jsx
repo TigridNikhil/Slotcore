@@ -35,7 +35,7 @@ const fetchLedger = async (pageNum = 1) => {
         },
       }
     );
-    setLedgerData(res.data);
+    setLedgerData(res.data.data);
     setLedgerPage(pageNum);
   } catch (err) {
     console.error("Failed to fetch ledger", err);

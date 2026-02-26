@@ -37,7 +37,7 @@ export default function Categories() {
   const fetchCategories = async () => {
     try {
       const res = await api.get("/");
-      setCategories(res.data);
+      setCategories(res.data.data);
     } catch (err) {
       console.error("Failed to fetch categories", err);
     } finally {

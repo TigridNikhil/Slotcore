@@ -25,7 +25,7 @@ export default function Vendors() {
   const fetchOrgs = async () => {
     try {
       const res = await api.get("/organizations");
-      setOrgs(res.data);
+      setOrgs(res.data.data);
     } catch (err) {
       console.error("Failed to fetch", err);
     } finally {

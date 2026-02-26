@@ -104,7 +104,7 @@ export default function RegisterOrg() {
               {[
                 {
                   icon: <FaRocket className="text-secondary-300" />,
-                  text: "14-day free trial, no credit card required",
+                  text: "30-day free trial, no credit card required",
                 },
                 {
                   icon: <FaShieldAlt className="text-secondary-300" />,
