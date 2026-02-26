@@ -30,7 +30,7 @@ import {
   getDashboardStats,
   getOverviewStats,
 } from "../../operations/dashboard/dashboardAction";
-import { FaStar } from "react-icons/fa6";
+import { FaGlobe, FaStar } from "react-icons/fa6";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -239,14 +239,19 @@ export default function Dashboard() {
               <img src="/logo.png" alt="Slotcore" className="h-8" />
               Slotcore
             </h1>
-            <div
-              className="mt-1 pl-11"
-              onClick={() => navigate("/dashboard/organization")}
-            >
+            <div className="mt-1 pl-11">
               {user.orgName && (
                 <p className="text-black font-medium text-sm">{user.orgName}</p>
               )}
-              {/* <p className="text-xs text-gray-400">Tenant Dashboard</p> */}
+              <a
+                href={`https://slotcore.vercel.app/preview?org=${localStorage.getItem("tenantSlug")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary-600 hover:text-primary-700 font-bold flex items-center gap-1 mt-1 group"
+              >
+                <FaGlobe className="text-[10px]" />
+                <span className="group-hover:underline">View Website</span>
+              </a>
             </div>
           </div>
           <button
