@@ -34,12 +34,12 @@ exports.requestOtp = async (req, res) => {
     await consumer.save();
 
     // Send Email
-    const sent = await emailService.sendOtp(email, otp);
-    if (!sent) {
-      return res.serverError(null, "Failed to send OTP email");
-    }
+    // const sent = await emailService.sendOtp(email, otp);
+    // if (!sent) {
+    //   return res.serverError(null, "Failed to send OTP email");
+    // }
 
-    res.successResponse(null, "OTP sent successfully");
+    res.successResponse({ otp }, "OTP sent successfully");
   } catch (error) {
     console.error("Request OTP Error:", error);
     res.serverError(error.message, "Internal Server Error");
