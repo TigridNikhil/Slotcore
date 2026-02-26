@@ -83,7 +83,7 @@ const Navbar = ({ toggleMenu, closeMenu, isMobileMenuOpen }) => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="fixed top-0 right-0 bottom-0 w-[100%] max-w-sm bg-white shadow-2xl z-[100] lg:hidden flex flex-col pt-24"
             >
-              <div className="px-6 space-y-2 flex-1">
+              <div className="px-6 space-y-2 flex-1 bg-white">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 mb-6 px-4">
                   Navigation
                 </p>
@@ -99,7 +99,7 @@ const Navbar = ({ toggleMenu, closeMenu, isMobileMenuOpen }) => {
                 ))}
               </div>
 
-              <div className="p-6 border-t border-neutral-100 bg-neutral-50/50">
+              <div className="p-6 border-t border-neutral-100 bg-white">
                 <Link
                   to="/register"
                   onClick={closeMenu}

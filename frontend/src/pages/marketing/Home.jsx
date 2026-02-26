@@ -39,7 +39,7 @@ export default function Home() {
               Enterprise Booking
             </span>
             <br />
-            <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent text-[50px]">
               Infrastructure
             </span>
           </h1>
@@ -115,7 +115,7 @@ export default function Home() {
       </section>
 
       {/* Trust Section */}
-      <section className="py-14 bg-neutral-50/50 border-y border-neutral-100">
+      <section className=" bg-neutral-50/50 border-y border-neutral-100">
         <div className="container mx-auto px-6 text-center">
           <p className="text-neutral-400 text-sm font-bold uppercase tracking-[0.2em] mb-12">
             The infrastructure powering tomorrow's leaders
@@ -138,28 +138,31 @@ export default function Home() {
           </div>
         </div>
       </section>
-
       {/* Feature Grid - The Engine */}
-      <section id="features" className="py-40 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="max-w-3xl mb-24">
-            <h2 className="text-indigo-600 font-bold tracking-widest uppercase text-sm mb-4">
+      <section id="features" className="py-20 sm:py-28 lg:py-36 bg-white">
+        <div className="mx-auto px-6 sm:px-8 lg:px-12">
+          {/* Section Header */}
+          <div className="text-center max-w-4xl mx-auto mb-16 sm:mb-20 lg:mb-24">
+            <h2 className="text-indigo-600 font-bold tracking-widest uppercase text-xs sm:text-sm mb-4">
               Core Capabilities
             </h2>
-            <h3 className="text-5xl md:text-6xl font-black text-neutral-900 mb-8 leading-tight">
-              Engineered for <br />
+
+            <h3 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-neutral-900 leading-tight mb-6">
+              Engineered for <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">
                 High-Growth
               </span>{" "}
               Organizations
             </h3>
-            <p className="text-xl text-neutral-600 leading-relaxed font-medium">
+
+            <p className="text-base sm:text-lg md:text-xl text-neutral-600 leading-relaxed font-medium">
               A complete suite of infrastructure tools to manage multi-tenant
               operations, marketplace discovery, and AI-driven automation.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {/* Feature Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
             <SaaSFeatureCard
               icon={<FaLayerGroup />}
               title="Multi-Tenant Core"
@@ -167,6 +170,7 @@ export default function Home() {
               color="text-primary-600"
               bg="bg-primary-50"
             />
+
             <SaaSFeatureCard
               icon={<FaGlobe />}
               title="Marketplace Ecosystem"
@@ -174,6 +178,7 @@ export default function Home() {
               color="text-indigo-600"
               bg="bg-indigo-50"
             />
+
             <SaaSFeatureCard
               icon={<FaMicrochip />}
               title="AI Studio"
@@ -181,6 +186,7 @@ export default function Home() {
               color="text-secondary-600"
               bg="bg-secondary-50"
             />
+
             <SaaSFeatureCard
               icon={<FaCalendarAlt />}
               title="Engineered Scheduling"
@@ -188,6 +194,7 @@ export default function Home() {
               color="text-emerald-600"
               bg="bg-emerald-50"
             />
+
             <SaaSFeatureCard
               icon={<FaCreditCard />}
               title="Monetization Layer"
@@ -195,6 +202,7 @@ export default function Home() {
               color="text-orange-600"
               bg="bg-orange-50"
             />
+
             <SaaSFeatureCard
               icon={<FaShieldAlt />}
               title="Access Control (RBAC)"
@@ -209,7 +217,7 @@ export default function Home() {
       {/* Stats Section */}
       <section className="py-32 bg-neutral-900 selection:bg-primary-500/30 selection:text-white">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             <StatItem number="10M+" label="API Requests/mo" />
             <StatItem number="50K+" label="Active Subdomains" />
             <StatItem number="99.99%" label="Engine Uptime" />
@@ -219,7 +227,7 @@ export default function Home() {
       </section>
 
       {/* Mobile App Promo Section */}
-      <section className="py-40 bg-neutral-900 relative overflow-hidden underline-offset-4">
+      <section className="py-32 bg-neutral-900 selection:bg-primary-500/30 selection:text-white">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary-900/40 to-transparent pointer-events-none" />
 
         <div className="container mx-auto px-6 relative z-10">
@@ -335,7 +343,8 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
+            {" "}
             <SaaSTestimonialCard
               name="Sarah Johnson"
               role="CTO @ HealthTech"
