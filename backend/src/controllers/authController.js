@@ -44,6 +44,16 @@ exports.registerOrganization = async (req, res) => {
     const freePlan = await Plan.findOne({ where: { name: "Free" } });
     const planId = freePlan ? freePlan.id : null; // Handle case if seeds not run
 
+    const findExistOrg = await Organization.findOne({ where: { slug } });
+    if (findExistOrg) {
+      return res.badRequest("Organization already exists with this name");
+    }
+
+    const findExistUser = await User.findOne({ where: { email } });
+    if (findExistUser) {
+      return res.badRequest("Organization already exists with this email");
+    }
+
     // 4. Create Organization
     const organization = await Organization.create(
       {
@@ -128,14 +138,8 @@ exports.registerOrganization = async (req, res) => {
 
     // Handle uniqueness constraint violation explicitly if needed
     if (error.name === "SequelizeUniqueConstraintError") {
-      return res.status(409).json({
-        success: false,
-        message: "Email already exists",
-        error:
-          "Email already exists in this organization (or globally if enforced).",
-      });
+      return res.validationError("Email already exists");
     }
-
     res.serverError(error.message);
   }
 };

@@ -278,32 +278,42 @@ export default function Home() {
 
             <div className="lg:w-1/2 relative w-full mt-20 lg:mt-0">
               <div className="relative h-full w-full flex items-center justify-center">
-                <div className="absolute transform -rotate-12 -translate-x-32 opacity-40 hover:opacity-100 transition-all duration-500 hover:scale-105">
+                {/* Background images (older ones) */}
+                <div className="absolute transform -rotate-12 -translate-x-40 opacity-30 hover:opacity-100 transition-all duration-500 hover:scale-105 hover:z-30">
                   <img
                     src="/signup.jpeg"
                     alt="Signup"
-                    className="w-56 md:w-64 rounded-[2.5rem] shadow-2xl border-2 border-white/10"
+                    className="w-48 md:w-56 rounded-[2.5rem] shadow-2xl border-2 border-white/10"
                   />
                 </div>
-                <div className="absolute transform -rotate-6 -translate-x-16 opacity-70 hover:opacity-100 transition-all duration-500 hover:scale-105">
+                <div className="absolute transform -rotate-6 -translate-x-24 opacity-50 hover:opacity-100 transition-all duration-500 hover:scale-105 hover:z-30">
+                  <img
+                    src="/bookingmodal.jpeg"
+                    alt="Booking Modal"
+                    className="w-48 md:w-56 rounded-[2.5rem] shadow-2xl border-2 border-white/10"
+                  />
+                </div>
+                <div className="absolute transform rotate-0 -translate-x-0 opacity-70 hover:opacity-100 transition-all duration-500 hover:scale-105 hover:z-30">
                   <img
                     src="/bookingpage.jpeg"
-                    alt="Booking"
-                    className="w-56 md:w-64 rounded-[2.5rem] shadow-2xl border-2 border-white/10"
+                    alt="Booking Page"
+                    className="w-48 md:w-56 rounded-[2.5rem] shadow-2xl border-2 border-white/10"
                   />
                 </div>
-                <div className="absolute transform rotate-3 translate-x-16 z-10 hover:z-30 transition-all duration-500 hover:scale-105">
+
+                {/* Main focus images */}
+                <div className="absolute transform rotate-6 translate-x-24 z-10 hover:z-30 transition-all duration-500 hover:scale-105">
                   <img
                     src="/dashboardmobileapp.jpeg"
                     alt="Dashboard"
-                    className="w-56 md:w-64 rounded-[2.5rem] shadow-2xl border-4 border-primary-500/50"
+                    className="w-48 md:w-56 rounded-[2.5rem] shadow-2xl border-4 border-primary-500/50"
                   />
                 </div>
-                <div className="absolute transform rotate-12 translate-x-32 z-20 hover:z-30 transition-all duration-500 hover:scale-105">
+                <div className="absolute transform rotate-12 translate-x-40 z-20 hover:z-30 transition-all duration-500 hover:scale-105">
                   <img
                     src="/splashscreen.jpeg"
                     alt="Splash"
-                    className="w-56 md:w-64 rounded-[2.5rem] shadow-2xl border-4 border-secondary-500/50"
+                    className="w-48 md:w-56 rounded-[2.5rem] shadow-2xl border-4 border-secondary-500/50"
                   />
                 </div>
               </div>
