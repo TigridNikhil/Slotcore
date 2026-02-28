@@ -95,10 +95,10 @@ export default function RegisterOrg() {
             </Link>
 
             <h1 className="text-5xl font-bold mb-8 text-white leading-tight">
-              Start Your
+              Build Your
               <br />
               <span className="bg-gradient-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent">
-                Digital Transformation
+                Booking Infrastructure
               </span>
             </h1>
 
@@ -106,15 +106,15 @@ export default function RegisterOrg() {
               {[
                 {
                   icon: <FaRocket className="text-secondary-300" />,
-                  text: "30-day free trial, no credit card required",
+                  text: "Multi-tenant isolation & secure subdomains",
                 },
                 {
                   icon: <FaShieldAlt className="text-secondary-300" />,
-                  text: "Enterprise-grade security & compliance",
+                  text: "Marketplace discovery & monetization",
                 },
                 {
                   icon: <FaChartLine className="text-secondary-300" />,
-                  text: "Advanced analytics & reporting",
+                  text: "AI Studio: Automated content & site building",
                 },
               ].map((item, index) => (
                 <div
@@ -169,14 +169,13 @@ export default function RegisterOrg() {
           {/* Form Header */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 border border-primary-100 text-primary-700 text-sm font-medium mb-6">
-              <FaRocket className="text-sm" />
-              <span>Start your free trial today</span>
+              <span>The Core of Seamless Bookings</span>
             </div>
             <h2 className="text-4xl font-bold text-neutral-900 mb-3">
-              Create Your Organization
+              Deploy Your Workspace
             </h2>
             <p className="text-neutral-600 text-lg">
-              Join thousands of businesses that trust Slotcore
+              Scale your booking ecosystem with the multi-tenant engine.
             </p>
           </div>
 

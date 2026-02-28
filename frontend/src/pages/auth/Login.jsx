@@ -71,10 +71,10 @@ export default function Login({ isMainDomain }) {
             </Link>
 
             <h1 className="text-5xl font-bold mb-8 text-white leading-tight">
-              Welcome Back
+              Control Your
               <br />
               <span className="bg-gradient-to-r from-secondary-300 to-primary-300 bg-clip-text text-transparent">
-                To Your Dashboard
+                Booking Ecosystem
               </span>
             </h1>
 
@@ -82,15 +82,15 @@ export default function Login({ isMainDomain }) {
               {[
                 {
                   icon: <FaChartLine className="text-secondary-300" />,
-                  text: "Real-time analytics & insights",
+                  text: "Real-time slot management & availability",
                 },
                 {
                   icon: <FaShieldAlt className="text-secondary-300" />,
-                  text: "Enterprise-grade security",
+                  text: "Enterprise RBAC & detailed audit logging",
                 },
                 {
                   icon: <FaRocket className="text-secondary-300" />,
-                  text: "Fast & reliable performance",
+                  text: "Transactional conflict prevention engine",
                 },
               ].map((item, index) => (
                 <div
@@ -127,14 +127,13 @@ export default function Login({ isMainDomain }) {
           {/* Form Header */}
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 border border-primary-100 text-primary-700 text-sm font-medium mb-6">
-              <FaShieldAlt className="text-sm" />
-              <span>Secure Login Portal</span>
+              <span>The Core of Seamless Bookings</span>
             </div>
             <h2 className="text-4xl font-bold text-neutral-900 mb-3">
-              Sign In to Your Account
+              Access Your Workspace
             </h2>
             <p className="text-neutral-600 text-lg">
-              Access your dashboard and continue growing your business
+              Manage your white-labeled infrastructure & bookings.
             </p>
           </div>
 

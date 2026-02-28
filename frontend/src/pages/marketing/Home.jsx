@@ -27,11 +27,11 @@ export default function Home() {
 
         <div className="container mx-auto px-6 text-center relative z-10">
           <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-full bg-white/80 backdrop-blur-md border border-primary-100 shadow-sm text-primary-700 text-sm font-semibold animate-fade-in">
-            <span className="flex h-2 w-2 relative">
+            {/* <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
-            </span>
-            <span>Scale your booking infrastructure with AI</span>
+            </span> */}
+            <span>The Core of Seamless Bookings</span>
           </div>
 
           <h1 className="text-4xl md:text-8xl font-black mb-8 tracking-tight leading-[1.1]">
