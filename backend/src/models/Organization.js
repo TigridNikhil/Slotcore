@@ -105,17 +105,7 @@ const Organization = sequelize.define(
     },
     // Categorization
     category: {
-      type: DataTypes.ENUM(
-        "Diagnostics & Labs",
-        "Clinics & Hospitals",
-        "Salons & Wellness",
-        "Professional Services",
-        "Education & Training",
-        "Government Services",
-        "Home & Field Services",
-        "Corporate & Enterprise",
-        "Other",
-      ),
+      type: DataTypes.STRING,
       defaultValue: "Other",
     },
     categoryId: {

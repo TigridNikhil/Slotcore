@@ -55,7 +55,9 @@ export default function RegisterOrg() {
 
   const handleCategoryChange = (e) => {
     const val = e.target.value;
-    const matched = categories.find((c) => c.name === val);
+    const matched = categories.find(
+      (c) => c.name.toLowerCase() === val.toLowerCase(),
+    );
     setFormData((prev) => ({
       ...prev,
       category: val,
