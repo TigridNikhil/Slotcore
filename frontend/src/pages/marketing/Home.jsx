@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <div className="bg-white selection:bg-primary-100 selection:text-primary-900 font-sans">
       {/* Enhanced Hero Section */}
-      <section className="relative pb-48 overflow-hidden">
+      <section className="relative pb-48 overflow-hidden mt-10">
         {/* Background Gradients */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-b from-primary-50/50 via-secondary-50/30 to-transparent blur-3xl rounded-full -z-10" />
 
@@ -34,12 +34,12 @@ export default function Home() {
             <span>Scale your booking infrastructure with AI</span>
           </div>
 
-          <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tight leading-[1.1]">
+          <h1 className="text-4xl md:text-8xl font-black mb-8 tracking-tight leading-[1.1]">
             <span className="bg-gradient-to-r from-neutral-900 via-neutral-800 to-neutral-900 bg-clip-text text-transparent">
               Enterprise Booking
             </span>
             <br />
-            <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent text-[50px]">
+            <span className="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent font-bold">
               Infrastructure
             </span>
           </h1>
@@ -248,8 +248,8 @@ export default function Home() {
 
               <p className="text-xl text-neutral-400 mb-12 max-w-xl leading-relaxed">
                 We're extending our backend engine to native mobile. Soon,
-                organization admins and users will manage their entire dashboard with
-                native-level performance.
+                organization admins and users will manage their entire dashboard
+                with native-level performance.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-12">

@@ -52,7 +52,7 @@ export default function Login({ isMainDomain }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-neutral-50 to-primary-50 flex">
       {/* Left Panel - Premium Branding */}
-      <div className="hidden lg:flex w-2/5 relative overflow-hidden">
+      <div className="hidden lg:flex w-3/5 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-800 to-secondary-800"></div>
 
         {/* Animated Background Elements */}
@@ -121,7 +121,6 @@ export default function Login({ isMainDomain }) {
           <div className="w-8 h-8 rounded-full border border-neutral-200 flex items-center justify-center group-hover:border-primary-300 transition-colors">
             ←
           </div>
-          <span>Back to Home</span>
         </Link>
 
         <div className="max-w-md w-full relative z-10">
