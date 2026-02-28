@@ -705,7 +705,7 @@ exports.getBookingDetails = async (req, res) => {
         req.user.role !== "org_admin" &&
         req.user.role !== "staff")
     ) {
-      return res.forbidden(null, "Access denied");
+      return res.forbidden("Access denied");
     }
 
     const booking = await Booking.findOne({
@@ -724,7 +724,7 @@ exports.getBookingDetails = async (req, res) => {
       return res.notFound("Booking not found");
     }
 
-    res.successResponse(booking);
+    res.successResponse(booking, "Booking details fetched successfully");
   } catch (error) {
     console.error("Error fetching booking details:", error);
     res.serverError(error.message, "Internal server error");

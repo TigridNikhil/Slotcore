@@ -419,79 +419,86 @@ export default function BookingsList() {
                 </td>
               </tr>
             )}
-            {bookings.map((booking) => (
-              <tr
-                key={booking.id}
-                variants={item}
-                className="hover:bg-indigo-50/30 transition-colors"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
-                  {booking.bookingId || "N/A"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
-                      {booking.customerName.charAt(0)}
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {booking.customerName}
+            {bookings.map((booking) => {
+              const isOverdue = new Date(booking.startTime) < new Date();
+              const overduedays = new Date(booking.startTime) - new Date();
+              return (
+                <tr
+                  key={booking.id}
+                  variants={item}
+                  className="hover:bg-indigo-50/30 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-mono">
+                    {booking.bookingId || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs">
+                        {booking.customerName.charAt(0)}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {booking.customerEmail}
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {booking.customerName}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {booking.customerEmail}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded">
-                    {booking.Service?.name}
-                  </span>
-                  {booking.rescheduleReason && (
-                    <div className="mt-1 text-xs text-indigo-600">
-                      <span className="font-semibold">Rescheduled:</span>{" "}
-                      {booking.rescheduleReason}
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {new Date(booking.startTime).toLocaleDateString()}{" "}
-                  <span className="text-gray-400">at</span>{" "}
-                  {new Date(booking.startTime).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(booking.status)}
-                  {booking.status === "cancelled" &&
-                    booking.cancellationReason && (
-                      <div
-                        className="mt-1 text-xs text-red-500 max-w-[150px] truncate"
-                        title={booking.cancellationReason}
-                      >
-                        Reason: {booking.cancellationReason}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded">
+                      {booking.Service?.name}
+                    </span>
+                    {booking.rescheduleReason && (
+                      <div className="mt-1 text-xs text-indigo-600">
+                        <span className="font-semibold">Rescheduled:</span>{" "}
+                        {booking.rescheduleReason}
                       </div>
                     )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <div className="flex justify-end items-center gap-3">
-                    {/* PRIMARY ACTION */}
-                    {(booking.status === "awaiting_completion" ||
-                      booking.status === "confirmed") && (
-                      <button
-                        onClick={() => onMarkCompleted(booking.id)}
-                        className="bg-green-600 text-white px-3 py-1 rounded text-xs font-medium
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    {new Date(booking.startTime).toLocaleDateString()}{" "}
+                    <span className="text-gray-400">at</span>{" "}
+                    {new Date(booking.startTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    <br />
+                    {isOverdue && booking.status !== "completed" && (
+                      <span className="ml-2 text-red-500">Overdue</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(booking.status)}
+                    {booking.status === "cancelled" &&
+                      booking.cancellationReason && (
+                        <div
+                          className="mt-1 text-xs text-red-500 max-w-[150px] truncate"
+                          title={booking.cancellationReason}
+                        >
+                          Reason: {booking.cancellationReason}
+                        </div>
+                      )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <div className="flex justify-end items-center gap-3">
+                      {/* PRIMARY ACTION */}
+                      {(booking.status === "awaiting_completion" ||
+                        booking.status === "confirmed") && (
+                        <button
+                          onClick={() => onMarkCompleted(booking.id)}
+                          className="bg-green-600 text-white px-3 py-1 rounded text-xs font-medium
                    hover:bg-green-700 transition shadow"
-                      >
-                        Mark Completed
-                      </button>
-                    )}
+                        >
+                          Mark Completed
+                        </button>
+                      )}
 
-                    {/* SECONDARY ACTIONS */}
-                    {booking.status !== "cancelled" && (
-                      <div className="flex items-center gap-2">
-                        {/* <IconButton
+                      {/* SECONDARY ACTIONS */}
+                      {booking.status !== "cancelled" && (
+                        <div className="flex items-center gap-2">
+                          {/* <IconButton
                           onClick={() => onRescheduleClick(booking)}
                           title="Reschedule"
                           className="text-indigo-600 border-indigo-200 bg-indigo-50 hover:bg-indigo-100"
@@ -499,47 +506,48 @@ export default function BookingsList() {
                           <FaEdit />
                         </IconButton> */}
 
-                        <IconButton
-                          onClick={() => onCancelBooking(booking.id)}
-                          title="Cancel"
-                          className="text-red-600 border-red-200 bg-red-50 hover:bg-red-100"
-                        >
-                          <FaBan />
-                        </IconButton>
+                          <IconButton
+                            onClick={() => onCancelBooking(booking.id)}
+                            title="Cancel"
+                            className="text-red-600 border-red-200 bg-red-50 hover:bg-red-100"
+                          >
+                            <FaBan />
+                          </IconButton>
 
-                        <IconButton
-                          onClick={() => onMarkNoShow(booking.id)}
-                          title="Mark No Show"
-                          className="text-gray-600 border-gray-200 bg-gray-50 hover:bg-gray-100"
-                        >
-                          <FaUserSlash />
-                        </IconButton>
-                      </div>
-                    )}
+                          <IconButton
+                            onClick={() => onMarkNoShow(booking.id)}
+                            title="Mark No Show"
+                            className="text-gray-600 border-gray-200 bg-gray-50 hover:bg-gray-100"
+                          >
+                            <FaUserSlash />
+                          </IconButton>
+                        </div>
+                      )}
 
-                    {/* UTILITIES */}
-                    <IconButton
-                      onClick={() => setHistoryData(booking)}
-                      title="View History"
-                      className="text-gray-400 border-gray-200 bg-gray-50 hover:bg-gray-100"
-                    >
-                      <FaClock />
-                    </IconButton>
-
-                    {(booking.status === "confirmed" ||
-                      booking.status === "completed") && (
+                      {/* UTILITIES */}
                       <IconButton
-                        onClick={() => handleDownloadInvoice(booking.id)}
-                        title="Download Invoice"
-                        className="text-indigo-500 border-indigo-200 bg-indigo-50 hover:bg-indigo-100"
+                        onClick={() => setHistoryData(booking)}
+                        title="View History"
+                        className="text-gray-400 border-gray-200 bg-gray-50 hover:bg-gray-100"
                       >
-                        <FaFileInvoiceDollar />
+                        <FaClock />
                       </IconButton>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+
+                      {(booking.status === "confirmed" ||
+                        booking.status === "completed") && (
+                        <IconButton
+                          onClick={() => handleDownloadInvoice(booking.id)}
+                          title="Download Invoice"
+                          className="text-indigo-500 border-indigo-200 bg-indigo-50 hover:bg-indigo-100"
+                        >
+                          <FaFileInvoiceDollar />
+                        </IconButton>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

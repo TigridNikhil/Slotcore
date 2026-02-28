@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import axios from "axios";
 import { toast } from "react-hot-toast";
 import {
   FaCheckCircle,
@@ -10,7 +9,7 @@ import {
   FaClock,
   FaTag,
 } from "react-icons/fa";
-import config from "../../utils/config";
+import { axiosInstance } from "../../utils/baseurl";
 
 const ScanBooking = () => {
   const [scanResult, setScanResult] = useState(null);
@@ -70,45 +69,22 @@ const ScanBooking = () => {
     setBookingDetails(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const { data } = await axios.get(
-        `${config.BackendURL}/bookings/${bookingId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      setBookingDetails(data);
+      const { data } = await axiosInstance.get(`/bookings/${bookingId}`);
+      setBookingDetails(data.data);
       toast.success("Booking found!");
     } catch (err) {
       console.error(err);
       setError("Booking not found or access denied.");
       toast.error("Invalid QR Code or Booking not found.");
-      // If failed, maybe resume scanner? Or let user reset?
-      // Better to let user reset manually if error, otherwise it loops errors.
     } finally {
       setLoading(false);
-      // We do NOT automatically resume here. We wait for user action.
-      // But we keep isScanningRef = true so it doesn't auto-scan again if resumed accidentally.
     }
   };
 
   const handleCheckIn = async () => {
     if (!bookingDetails) return;
     try {
-      const token = localStorage.getItem("token");
-      // Update status to 'completed' or a new 'checked_in' state?
-      // User asked for "Check In / Scan".
-      // Existing endpoints: complete, markNoShow.
-      // Let's use 'complete' as "Check In/Done" for now, or just verify context?
-      // Usually, Check In != Complete. Check In is "User arrived".
-      // If system doesn't have Check In, maybe we just Verify it is valid (which we did by fetching).
-      // Let's add a "Mark Completed" button.
-
-      await axios.put(
-        `${config.BackendURL}/bookings/${bookingDetails.id}/complete`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await axiosInstance.put(`/bookings/${bookingDetails.id}/complete`);
       toast.success("Booking marked as COMPLETED.");
       setBookingDetails((prev) => ({ ...prev, status: "completed" }));
     } catch (err) {

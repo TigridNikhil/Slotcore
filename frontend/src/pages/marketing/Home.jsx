@@ -238,7 +238,7 @@ export default function Home() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                 </span>
-                <span>COMING SOON: SLOTIFY MOBILE</span>
+                <span>COMING SOON: SLOTCORE MOBILE</span>
               </div>
 
               <h2 className="text-5xl md:text-7xl font-black mb-8 text-white leading-none tracking-tighter">
@@ -248,7 +248,7 @@ export default function Home() {
 
               <p className="text-xl text-neutral-400 mb-12 max-w-xl leading-relaxed">
                 We're extending our backend engine to native mobile. Soon,
-                organization admins will manage their entire dashboard with
+                organization admins and users will manage their entire dashboard with
                 native-level performance.
               </p>
 

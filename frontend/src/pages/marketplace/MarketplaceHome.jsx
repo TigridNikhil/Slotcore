@@ -132,7 +132,7 @@ export default function MarketplaceHome() {
             <img src="/logo.png" alt="Slotcore Logo" className="h-10" />
             <span className="font-bold text-2xl tracking-tight text-neutral-900">
               Slotcore{" "}
-              <span className="text-primary-600 font-medium">Market</span>
+              <span className="text-primary-600 font-medium">Marketplace</span>
             </span>
           </Link>
           <div className="flex gap-4">
@@ -519,7 +519,7 @@ function OrgCardV2({ org, isFeatured, onClick }) {
               <span className="text-xs font-bold text-neutral-800">
                 {org.averageRating
                   ? Number(org.averageRating).toFixed(1)
-                  : "N/A"}
+                  : "-"}
               </span>
             </div>
           </div>
