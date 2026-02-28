@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: "Marketplace", to: "/marketplace" },
   { label: "Pricing", to: "/pricing" },
   { label: "About", to: "/about" },
-  { label: "Enterprise", to: "/#enterprise" },
+  { label: "Partners", to: "/partners" },
 ];
 
 const Navbar = ({ toggleMenu, closeMenu, isMobileMenuOpen }) => {
