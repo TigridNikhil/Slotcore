@@ -83,7 +83,10 @@ app.use(
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
+      // Allow if origin is null (e.g. non-browser requests) or if wildcard "*" is in allowedOrigins
+      if (!origin || allowedOrigins.includes("*")) {
+        return callback(null, true);
+      }
       if (allowedOrigins.indexOf(origin) === -1) {
         console.warn(`[CORS] Rejected Origin: ${origin}`);
         return callback(
