@@ -1,5 +1,7 @@
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
+const isLocal =
+  process.env.DB_HOST === "localhost" || process.env.DB_HOST === "127.0.0.1";
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -7,7 +9,7 @@ const sequelize = new Sequelize(
   process.env.DB_PASSWORD,
   {
     dialect: "postgres",
-    logging: false, // Set to console.log to see SQL queries
+    logging: false,
     pool: {
       max: 10,
       min: 0,
@@ -16,12 +18,14 @@ const sequelize = new Sequelize(
     },
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
+    dialectOptions: isLocal
+      ? {}
+      : {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false,
+          },
+        },
   },
 );
 

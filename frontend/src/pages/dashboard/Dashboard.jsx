@@ -198,6 +198,12 @@ export default function Dashboard() {
       icon: <FaConciergeBell />,
       roles: ["admin", "org_admin"],
     },
+    {
+      label: "Developers",
+      path: "/dashboard/developers",
+      icon: <FaGem />,
+      roles: ["admin", "org_admin"],
+    },
     // {
     //   label: "Organization",
     //   path: "/dashboard/organization",

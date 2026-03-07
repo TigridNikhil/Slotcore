@@ -47,6 +47,7 @@ import NotificationSettings from "./pages/dashboard/NotificationSettings";
 import Payments from "./pages/dashboard/Payments";
 import ScanBooking from "./pages/dashboard/ScanBooking";
 import OrganizationDetail from "./pages/dashboard/OrganizationDetail";
+import Developers from "./pages/dashboard/Developers";
 
 function App() {
   // Simple subdomain detection
@@ -129,6 +130,7 @@ function App() {
             <Route path="payments" element={<Payments />} />
             <Route path="scan" element={<ScanBooking />} />
             <Route path="organization" element={<OrganizationDetail />} />
+            <Route path="developers" element={<Developers />} />
           </Route>
 
           {/* 404 */}

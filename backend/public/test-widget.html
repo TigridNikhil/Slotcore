@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slotcore Widget Test</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #f9fafb;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .preview-container {
+        max-width: 800px;
+        width: 100%;
+        padding: 40px;
+        text-align: center;
+      }
+      h1 {
+        font-size: 32px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 8px;
+      }
+      p {
+        color: #6b7280;
+        margin-bottom: 40px;
+      }
+
+      .code-block {
+        background: #111827;
+        color: #10b981;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: left;
+        font-family: monospace;
+        font-size: 14px;
+        margin-bottom: 40px;
+        overflow-x: auto;
+      }
+
+      /* The Widget itself » */
+      slotcore-widget {
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="preview-container">
+      <h1>Widget Preview</h1>
+      <p>This is how your customers will see the booking experience.</p>
+
+      <div class="code-block">
+        &lt;script
+        src="http://localhost:5000/v1/widget.js"&gt;&lt;/script&gt;<br />
+        &lt;slotcore-widget <br />
+        &nbsp;&nbsp;org-id="YOUR_ORG_ID" <br />
+        &nbsp;&nbsp;service-id="YOUR_SERVICE_ID"<br />
+        &gt;&lt;/slotcore-widget&gt;
+      </div>
+
+      <!-- Slotcore Widget -->
+      <slotcore-widget
+        org-id="aec2f214-af44-42c3-af23-40f33aa0dea2"
+        service-id="a627336a-ef0e-4b36-be47-dd55dcfb191c"
+        base-url="http://localhost:5000"
+      ></slotcore-widget>
+    </div>
+
+    <!-- Script Import -->
+    <script src="/v1/widget.js"></script>
+  </body>
+</html>

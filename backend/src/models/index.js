@@ -8,6 +8,9 @@ const Booking = require("./Booking");
 const Payment = require("./Payment");
 const PageSection = require("./PageSection");
 const Consumer = require("./Consumer");
+const ApiKey = require("./ApiKey");
+const Webhook = require("./Webhook");
+const WebhookEvent = require("./WebhookEvent");
 
 // ========================
 // Associations
@@ -232,6 +235,18 @@ Organization.hasMany(BillingTransaction, {
 BillingTransaction.belongsTo(Organization, { foreignKey: "orgId" });
 AuditLog.belongsTo(Organization, { foreignKey: "orgId" });
 
+// 26. Organization <-> ApiKey
+Organization.hasMany(ApiKey, { foreignKey: "orgId", onDelete: "CASCADE" });
+ApiKey.belongsTo(Organization, { foreignKey: "orgId" });
+
+// 27. Organization <-> Webhook
+Organization.hasMany(Webhook, { foreignKey: "orgId", onDelete: "CASCADE" });
+Webhook.belongsTo(Organization, { foreignKey: "orgId" });
+
+// 28. Webhook <-> WebhookEvent
+Webhook.hasMany(WebhookEvent, { foreignKey: "webhookId", onDelete: "CASCADE" });
+WebhookEvent.belongsTo(Webhook, { foreignKey: "webhookId" });
+
 module.exports = {
   sequelize,
   Plan,
@@ -260,4 +275,7 @@ module.exports = {
   Category,
   Consumer,
   BillingTransaction,
+  ApiKey,
+  Webhook,
+  WebhookEvent,
 };

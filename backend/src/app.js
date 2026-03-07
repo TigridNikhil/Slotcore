@@ -7,6 +7,7 @@ const { sequelize } = require("./models");
 
 const tenantResolver = require("./middlewares/tenantResolver");
 const responseMiddleware = require("./middlewares/responseMiddleware");
+const apiKeyAuth = require("./middlewares/apiKeyAuth");
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -24,6 +25,7 @@ const platformRoutes = require("./routes/platformRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const consumerRoutes = require("./routes/consumerRoutes");
 const billingRoutes = require("./routes/billingRoutes");
+const developerRoutes = require("./routes/developerRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,7 +35,7 @@ const allowedOrigins = [
   "https://slotcore.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
-
+  "http://localhost:5000",
   "https://slotcore-production.up.railway.app",
 ];
 
@@ -92,6 +94,7 @@ app.use(
       "Content-Type",
       "Authorization",
       "X-Tenant-Slug",
+      "X-Organization-Id",
       "X-Requested-With",
       "Accept",
     ],
@@ -102,6 +105,10 @@ app.use(
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(responseMiddleware);
+app.use(apiKeyAuth);
+
+// Serve static files (for widgets and docs)
+app.use(express.static(path.join(__dirname, "../public")));
 
 // app.use(express.static(path.join(__dirname, "../../frontend/dist")));
 // app.get(/^(?!\/api).*/, (req, res) => {
@@ -129,6 +136,13 @@ app.use("/api/platform", platformRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/mobile/consumer", consumerRoutes);
 app.use("/api/billing", tenantResolver, billingRoutes);
+app.use("/api/developers", tenantResolver, developerRoutes);
+
+/* ------------------ PLATFORM V1 ROUTES ------------------ */
+const v1Routes = require("./routes/v1Routes");
+app.use("/api/v1", tenantResolver, v1Routes);
+// Keep legacy /v1 for widget external access
+app.use("/v1", tenantResolver, v1Routes);
 
 /* ------------------ ERROR HANDLING ------------------ */
 app.use((req, res) => {

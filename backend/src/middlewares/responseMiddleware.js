@@ -71,6 +71,31 @@ const responseMiddleware = (req, res, next) => {
     });
   };
 
+  /**
+   * Stripe-style API Response
+   * @param {Object|Array} data
+   * @param {string} objectType e.g. 'booking', 'service'
+   */
+  res.apiResponse = (data, objectType = "list") => {
+    if (Array.isArray(data)) {
+      return res.status(200).json({
+        object: "list",
+        url: req.originalUrl,
+        has_more: false, // Could be enhanced with pagination logic
+        data: data.map((item) => {
+          const plainItem = item.toJSON ? item.toJSON() : item;
+          return { ...plainItem, object: objectType };
+        }),
+      });
+    } else {
+      const plainItem = data && data.toJSON ? data.toJSON() : data;
+      return res.status(200).json({
+        ...plainItem,
+        object: objectType,
+      });
+    }
+  };
+
   next();
 };
 
