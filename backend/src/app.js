@@ -36,7 +36,11 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5000",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5000",
   "https://slotcore-production.up.railway.app",
+  "https://slotcorewidget.vercel.app",
 ];
 
 app.use(
@@ -80,6 +84,7 @@ app.use(
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
       if (allowedOrigins.indexOf(origin) === -1) {
+        console.warn(`[CORS] Rejected Origin: ${origin}`);
         return callback(
           new Error(
             "The CORS policy for this site does not allow access from the specified Origin.",
