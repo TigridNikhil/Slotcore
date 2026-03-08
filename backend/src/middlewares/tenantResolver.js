@@ -15,7 +15,8 @@ const tenantResolver = async (req, res, next) => {
     const isMainDomain =
       hostname === BASE_DOMAIN ||
       hostname === `www.${BASE_DOMAIN}` ||
-      (process.env.NODE_ENV === "development" && hostname === "localhost"); // Handle plain localhost
+      hostname.includes("up.railway.app") || // Allow Railway production host to be a main domain
+      (process.env.NODE_ENV === "development" && hostname === "localhost");
 
     // 0. Try API Key Resolution (Already set by a middleware if present)
     if (req.orgId) {
@@ -46,7 +47,7 @@ const tenantResolver = async (req, res, next) => {
     const querySlug = req.query.slug || req.query.tenant;
 
     console.log(
-      `[TenantResolver] Host: ${hostname}, HeaderSlug: ${headerSlug}, QuerySlug: ${querySlug}, Base: ${BASE_DOMAIN}`,
+      `[TenantResolver] Host: ${hostname}, HeaderOrgId: ${headerOrgId}, HeaderSlug: ${headerSlug}, QuerySlug: ${querySlug}, Base: ${BASE_DOMAIN}`,
     );
 
     let subdomain = null;
