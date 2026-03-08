@@ -51,9 +51,9 @@ const tenantResolver = async (req, res, next) => {
 
     let subdomain = null;
 
-    if (headerSlug) {
+    if (headerSlug && headerSlug !== "null" && headerSlug !== "undefined") {
       subdomain = headerSlug;
-    } else if (querySlug) {
+    } else if (querySlug && querySlug !== "null" && querySlug !== "undefined") {
       subdomain = querySlug;
     }
     // 3. Try Subdomain
@@ -65,7 +65,7 @@ const tenantResolver = async (req, res, next) => {
     let tenant = null;
 
     // A. Priority 1: Header Org ID (Common for widgets)
-    if (headerOrgId) {
+    if (headerOrgId && headerOrgId !== "null" && headerOrgId !== "undefined") {
       tenant = await Organization.findByPk(headerOrgId, {
         attributes: [
           "id",

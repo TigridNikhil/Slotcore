@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Appointment | Slotcore</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .booking-wrapper {
+        width: 100%;
+        max-width: 500px;
+        padding: 24px;
+      }
+      .branding {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .branding img {
+        height: 32px;
+        margin-bottom: 12px;
+      }
+      .branding h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="booking-wrapper">
+      <div class="branding">
+        <h1 id="org-name">Loading...</h1>
+      </div>
+
+      <slotcore-booking id="widget"></slotcore-booking>
+    </div>
+
+    <script src="/v1/widget.js"></script>
+    <script>
+      async function init() {
+        const slug = window.location.pathname.split("/").pop();
+        const widget = document.getElementById("widget");
+        const orgNameEl = document.getElementById("org-name");
+
+        try {
+          // Fetch org details by slug to get ID
+          const res = await fetch(`/api/marketplace/organizations/${slug}`);
+          const data = await res.json();
+          const org = data.data;
+
+          if (org) {
+            orgNameEl.textContent = org.name;
+            widget.setAttribute("org-id", org.id);
+            widget.setAttribute("base-url", window.location.origin);
+          } else {
+            document.body.innerHTML = "<h1>Organization not found</h1>";
+          }
+        } catch (e) {
+          console.error(e);
+          document.body.innerHTML = "<h1>Error loading booking page</h1>";
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>

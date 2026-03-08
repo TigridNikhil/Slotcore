@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slotcore Developer Documentation</title>
+    <link rel="stylesheet" href="docs.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <div class="logo">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Slotcore
+        </div>
+
+        <nav>
+          <div class="nav-group">
+            <div class="nav-title">Introduction</div>
+            <a href="#getting-started" class="nav-link">Getting Started</a>
+            <a href="#authentication" class="nav-link">Authentication</a>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-title">SDK Reference</div>
+            <a href="#sdk-setup" class="nav-link">Setup</a>
+            <a href="#sdk-availability" class="nav-link">Availability</a>
+            <a href="#sdk-bookings" class="nav-link">Bookings</a>
+            <a href="#sdk-services" class="nav-link">Services</a>
+            <a href="#sdk-customers" class="nav-link">Customers</a>
+          </div>
+
+          <div class="nav-group">
+            <div class="nav-title">API Reference</div>
+            <a href="#api-v1" class="nav-link">V1 Endpoints</a>
+            <a href="#endpoint-auth" class="nav-link-sub">Auth</a>
+            <a href="#endpoint-orgs" class="nav-link-sub">Orgs</a>
+            <a href="#endpoint-services" class="nav-link-sub">Services</a>
+            <a href="#endpoint-staff" class="nav-link-sub">Staff</a>
+            <a href="#endpoint-availability" class="nav-link-sub"
+              >Availability</a
+            >
+            <a href="#endpoint-bookings" class="nav-link-sub">Bookings</a>
+            <a href="#endpoint-customers" class="nav-link-sub">Customers</a>
+            <a href="#endpoint-webhooks" class="nav-link-sub">Webhooks</a>
+            <a href="#endpoint-locations" class="nav-link-sub">Locations</a>
+          </div>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <section id="getting-started">
+          <h1>Developer Documentation</h1>
+          <p>
+            Welcome to the Slotcore developer documentation. Slotcore provides
+            the infrastructure you need to build powerful scheduling and booking
+            experiences with ease.
+          </p>
+
+          <h2>Quick Start</h2>
+          <p>
+            To get started, you'll need an API key from your Slotcore dashboard.
+            We provide both Public (pk_...) and Secret (sk_...) keys. All
+            endpoints are prefixed with <code>/api/v1</code>.
+          </p>
+          <pre><code class="language-bash"># Example: Using the SDK in a Node.js project
+npm install @slotcore/sdk  # Coming soon!</code></pre>
+        </section>
+
+        <section id="authentication">
+          <h2>Authentication</h2>
+          <p>
+            Authenticate your requests by including your API key in the
+            <code>Authorization</code> header as a Bearer token or using the
+            <code>X-API-KEY</code> header.
+          </p>
+          <pre><code class="language-javascript">fetch('https://api.slotcore.com/api/v1/availability', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+});</code></pre>
+        </section>
+
+        <section id="sdk-reference">
+          <h1>SDK Reference</h1>
+          <p>
+            The Slotcore JavaScript SDK simplifies interacting with our API from
+            both the browser and Node.js.
+          </p>
+
+          <h3 id="sdk-setup">Setup</h3>
+          <pre><code class="language-javascript">const Slotcore = require('slotcore-sdk');
+const slotcore = new Slotcore('sk_test_...');
+
+// For multi-tenant applications
+const slotcore = new Slotcore('pk_test_...', {
+  tenantSlug: 'my-business'
+});</code></pre>
+
+          <h3 id="sdk-availability">Availability</h3>
+          <p>Query available slots for your services.</p>
+          <pre><code class="language-javascript">const slots = await slotcore.availability.list({
+  service_id: 'uuid',
+  date: '2024-03-10'
+});</code></pre>
+
+          <h3 id="sdk-bookings">Bookings</h3>
+          <p>Manage appointments and reservations.</p>
+          <pre><code class="language-javascript">// Create a booking
+const booking = await slotcore.bookings.create({
+  service_id: 'uuid',
+  start_time: '2024-03-10T10:00:00Z',
+  customer: {
+    name: 'John Doe',
+    email: 'john@example.com'
+  }
+});
+
+// Cancel a booking
+await slotcore.bookings.cancel('booking_id');</code></pre>
+
+          <h3 id="sdk-services">Services</h3>
+          <p>Retrieve information about offered services.</p>
+          <pre><code class="language-javascript">const services = await slotcore.services.list();</code></pre>
+
+          <h3 id="sdk-customers">Customers</h3>
+          <p>Manage customer data (requires Secret Key).</p>
+          <pre><code class="language-javascript">const customers = await slotcore.customers.list();</code></pre>
+        </section>
+
+        <section id="api-v1">
+          <h2>API V1 Reference</h2>
+          <p>Comprehensive list of endpoints available in the Platform V1.</p>
+
+          <h3 id="endpoint-auth">Auth (API Keys)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/auth/keys</code></td>
+                <td>List organization API keys</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/auth/keys</code></td>
+                <td>Create a new API key</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-delete">DELETE</span></td>
+                <td><code>/auth/keys/:id</code></td>
+                <td>Revoke an API key</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-patch">PATCH</span></td>
+                <td><code>/auth/keys/:id/toggle</code></td>
+                <td>Activate/Deactivate key</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-orgs">Orgs</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/orgs/me</code></td>
+                <td>Get current organization profile</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-patch">PATCH</span></td>
+                <td><code>/orgs/me</code></td>
+                <td>Update organization settings</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-services">Services</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/services</code></td>
+                <td>List all services</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/services/:id</code></td>
+                <td>Get service details</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/services</code></td>
+                <td>Create a new service</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-patch">PATCH</span></td>
+                <td><code>/services/:id</code></td>
+                <td>Update a service</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-delete">DELETE</span></td>
+                <td><code>/services/:id</code></td>
+                <td>Delete a service</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-staff">Staff</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/staff</code></td>
+                <td>List all staff members</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/staff/:id</code></td>
+                <td>Get staff details</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/staff/:id/availability</code></td>
+                <td>Get staff specific schedules</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-availability">Availability</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/availability</code></td>
+                <td>Query slots (Slot Engine)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-bookings">Bookings</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/bookings</code></td>
+                <td>List bookings with filters</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/bookings</code></td>
+                <td>Create a new booking</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/bookings/:id</code></td>
+                <td>Get booking details</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-patch">PATCH</span></td>
+                <td><code>/bookings/:id</code></td>
+                <td>Update booking metadata/notes</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-patch">PATCH</span></td>
+                <td><code>/bookings/:id/cancel</code></td>
+                <td>Cancel a booking</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-customers">Customers</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/customers</code></td>
+                <td>List organization customers</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/customers/:id</code></td>
+                <td>Get customer profile</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/customers</code></td>
+                <td>Create or update a customer</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-webhooks">Webhooks</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/webhooks</code></td>
+                <td>List configured webhooks</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-post">POST</span></td>
+                <td><code>/webhooks</code></td>
+                <td>Register a new webhook</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-delete">DELETE</span></td>
+                <td><code>/webhooks/:id</code></td>
+                <td>Delete a webhook</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/webhooks/events</code></td>
+                <td>List supported event types</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/webhooks/:id/events</code></td>
+                <td>List delivery history</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="endpoint-locations">Locations</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/locations</code></td>
+                <td>List business locations</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-get">GET</span></td>
+                <td><code>/locations/:id</code></td>
+                <td>Get location details</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <footer
+          style="
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.8rem;
+          "
+        >
+          &copy; 2024 Slotcore Infrastructure. All rights reserved.
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

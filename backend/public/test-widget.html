@@ -61,18 +61,34 @@
       <div class="code-block">
         &lt;script
         src="http://localhost:5000/v1/widget.js"&gt;&lt;/script&gt;<br />
-        &lt;slotcore-widget <br />
+
+        &lt;!-- Inline Embed --&gt;<br />
+        &lt;slotcore-booking <br />
         &nbsp;&nbsp;org-id="YOUR_ORG_ID" <br />
-        &nbsp;&nbsp;service-id="YOUR_SERVICE_ID"<br />
-        &gt;&lt;/slotcore-widget&gt;
+        &gt;&lt;/slotcore-booking&gt;<br /><br />
+
+        &lt;!-- Popup Mode --&gt;<br />
+        &lt;slotcore-booking <br />
+        &nbsp;&nbsp;org-id="YOUR_ORG_ID" <br />
+        &nbsp;&nbsp;mode="popup" <br />
+        &gt;&lt;/slotcore-booking&gt;
       </div>
 
-      <!-- Slotcore Widget -->
-      <slotcore-widget
+      <h3>Inline Embed</h3>
+      <!-- Slotcore Widget Inline -->
+      <slotcore-booking
         org-id="aec2f214-af44-42c3-af23-40f33aa0dea2"
-        service-id="a627336a-ef0e-4b36-be47-dd55dcfb191c"
         base-url="http://localhost:5000"
-      ></slotcore-widget>
+      ></slotcore-booking>
+
+      <h3 style="margin-top: 40px">Popup Mode</h3>
+      <p>Check the bottom right of the screen!</p>
+      <!-- Slotcore Widget Popup -->
+      <slotcore-booking
+        org-id="aec2f214-af44-42c3-af23-40f33aa0dea2"
+        base-url="http://localhost:5000"
+        mode="popup"
+      ></slotcore-booking>
     </div>
 
     <!-- Script Import -->

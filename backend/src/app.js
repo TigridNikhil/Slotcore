@@ -153,6 +153,22 @@ app.use("/api/v1", tenantResolver, v1Routes);
 // Keep legacy /v1 for widget external access
 app.use("/v1", tenantResolver, v1Routes);
 
+/* ------------------ DIRECT BOOKING LINKS ------------------ */
+app.get("/book/:slug", async (req, res) => {
+  try {
+    const { Organization } = require("./models");
+    const org = await Organization.findOne({
+      where: { slug: req.params.slug },
+    });
+    if (!org) return res.status(404).send("Organization not found");
+
+    // Render the standalone booking page (injecting org ID)
+    res.sendFile(path.join(__dirname, "../public/book.html"));
+  } catch (error) {
+    res.status(500).send("Error loading booking page");
+  }
+});
+
 /* ------------------ ERROR HANDLING ------------------ */
 app.use((req, res) => {
   res.status(404).json({ error: "Not Found" });

@@ -111,3 +111,33 @@ exports.listOrganizations = async (req, res) => {
     res.serverError(error.message, "Failed to fetch marketplace listings");
   }
 };
+
+exports.getOrganizationBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const organization = await Organization.findOne({
+      where: { slug, isActive: true },
+      attributes: [
+        "id",
+        "name",
+        "slug",
+        "logoUrl",
+        "primaryColor",
+        "contactEmail",
+        "contactPhone",
+        "address",
+        "content",
+        "settings",
+      ],
+    });
+
+    if (!organization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    res.successResponse(organization);
+  } catch (error) {
+    console.error("Marketplace Get Error:", error);
+    res.serverError(error.message, "Failed to fetch organization details");
+  }
+};

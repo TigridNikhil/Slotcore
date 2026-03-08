@@ -1,5 +1,6 @@
 const { Booking, Resource, Service, Customer } = require("../../models");
 const sequelize = require("../../config/database");
+const { Op } = require("sequelize");
 
 const bookingController = {
   /**
@@ -11,6 +12,7 @@ const bookingController = {
       const {
         service_id,
         resource_id,
+        staff_id,
         start_time,
         end_time,
         customer,
@@ -65,7 +67,8 @@ const bookingController = {
       const bookingData = {
         orgId: resolvedOrgId,
         serviceId: service_id,
-        resourceId: resource_id || null, // Optional
+        resourceId: resource_id || null,
+        staffId: staff_id || null,
         customerId: customerRecord.id,
         startTime: start_time,
         endTime: actualEndTime,
@@ -73,12 +76,8 @@ const bookingController = {
         customerEmail: customer.email,
         customerMobile: customer.mobile,
         status: "confirmed",
+        metadata: metadata || {},
       };
-
-      // Handle metadata if column exists
-      if (metadata) {
-        bookingData.metadata = metadata;
-      }
 
       const booking = await Booking.create(bookingData, { transaction });
 
@@ -102,6 +101,102 @@ const bookingController = {
       if (transaction && !transaction.finished) await transaction.rollback();
       console.error("Platform Booking Error:", error);
       return res.serverError(error.message, "Error creating booking");
+    }
+  },
+
+  /**
+   * GET /v1/bookings
+   */
+  listBookings: async (req, res) => {
+    try {
+      const { status, customer_id, service_id, from, to } = req.query;
+      const where = { orgId: req.orgId };
+
+      if (status) where.status = status;
+      if (customer_id) where.customerId = customer_id;
+      if (service_id) where.serviceId = service_id;
+      if (from || to) {
+        where.startTime = {};
+        if (from) where.startTime[Op.gte] = new Date(from);
+        if (to) where.startTime[Op.lte] = new Date(to);
+      }
+
+      const bookings = await Booking.findAll({
+        where,
+        order: [["startTime", "DESC"]],
+        include: [
+          { model: Service, attributes: ["name", "durationMin"] },
+          { model: Customer, as: "customer", attributes: ["name", "email"] },
+        ],
+      });
+      return res.successResponse(bookings);
+    } catch (error) {
+      return res.serverError(error);
+    }
+  },
+
+  /**
+   * GET /v1/bookings/:id
+   */
+  getBooking: async (req, res) => {
+    try {
+      const booking = await Booking.findOne({
+        where: { id: req.params.id, orgId: req.orgId },
+        include: ["Service", "customer", "staff"],
+      });
+      if (!booking) return res.notFound("Booking not found");
+      return res.successResponse(booking);
+    } catch (error) {
+      return res.serverError(error);
+    }
+  },
+
+  /**
+   * PATCH /v1/bookings/:id
+   */
+  updateBooking: async (req, res) => {
+    try {
+      const { metadata, notes, status } = req.body;
+      const booking = await Booking.findOne({
+        where: { id: req.params.id, orgId: req.orgId },
+      });
+      if (!booking) return res.notFound("Booking not found");
+
+      if (metadata) booking.metadata = { ...booking.metadata, ...metadata };
+      if (notes) booking.notes = notes;
+      if (status) booking.status = status;
+
+      await booking.save();
+      return res.successResponse(booking, "Booking updated");
+    } catch (error) {
+      return res.serverError(error);
+    }
+  },
+
+  /**
+   * PATCH /v1/bookings/:id/cancel
+   */
+  cancelBooking: async (req, res) => {
+    try {
+      const booking = await Booking.findOne({
+        where: { id: req.params.id, orgId: req.orgId },
+      });
+      if (!booking) return res.notFound("Booking not found");
+
+      booking.status = "cancelled";
+      await booking.save();
+
+      // Dispatch webhook
+      try {
+        const WebhookDispatcher = require("../../utils/webhookDispatcher");
+        WebhookDispatcher.dispatch(req.orgId, "booking.cancelled", {
+          booking_id: booking.id,
+        });
+      } catch (e) {}
+
+      return res.successResponse(null, "Booking cancelled");
+    } catch (error) {
+      return res.serverError(error);
     }
   },
 };
